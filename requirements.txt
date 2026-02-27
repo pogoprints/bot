@@ -1,0 +1,77 @@
+# TELEGRAM BOT CLONE PROXY v4.0 - COMPLETE REQUIREMENTS
+# Generated for the ULTIMATE FIXED version
+# Python 3.8+ required (3.11+ recommended)
+
+# ==================== CORE DEPENDENCIES ====================
+aiogram==3.9.0              # Main Telegram Bot framework
+aiohttp==3.9.5              # Async HTTP client/server
+asyncio==3.4.3              # Async I/O library
+python-dotenv==1.0.1        # For environment variables (optional)
+
+# ==================== DATABASE ====================
+# sqlite3 is built-in to Python, no need to install
+
+# ==================== UTILITIES ====================
+python-dateutil==2.9.0.post0  # Advanced date parsing
+pytz==2024.1                  # Timezone handling
+chardet==5.2.0                 # Character detection
+certifi==2024.7.4              # SSL certificates
+idna==3.7                      # Internationalized domain names
+urllib3==2.2.2                 # HTTP client
+requests==2.32.3               # HTTP requests (fallback)
+
+# ==================== PATTERN MATCHING ====================
+regex==2024.7.24               # Advanced regex
+
+# ==================== JSON HANDLING ====================
+ujson==5.10.0                  # Ultra fast JSON (optional)
+orjson==3.10.6                 # Another fast JSON option
+python-json-logger==2.0.7      # JSON logging
+
+# ==================== FILE OPERATIONS ====================
+aiofiles==24.1.0               # Async file operations
+
+# ==================== RATE LIMITING ====================
+cachetools==5.4.0              # Caching and rate limiting
+
+# ==================== CONSOLE ENHANCEMENTS ====================
+colorama==0.4.6                # Colored console output (Windows)
+rich==13.7.1                    # Rich text in terminal (optional)
+tqdm==4.66.4                    # Progress bars
+
+# ==================== FILE TYPE DETECTION ====================
+python-magic==0.4.27            # MIME type detection
+# For Windows, also install: python-magic-bin==0.4.14
+
+# ==================== HTML REPORT GENERATION ====================
+jinja2==3.1.4                   # Templating engine
+markupsafe==2.1.5               # Safe string handling
+beautifulsoup4==4.12.3          # HTML parsing
+lxml==5.2.2                     # Fast XML/HTML parser
+
+# ==================== DIAGRAM GENERATION ====================
+# graphviz==0.20.3              # For visual diagrams (requires system GraphViz)
+
+# ==================== ASYNC PERFORMANCE ====================
+# uvloop==0.19.0                # Unix-only, faster event loop
+# aiodns==3.2.0                 # Faster DNS resolution
+# cchardet==2.1.7               # Faster character detection
+
+# ==================== SECURITY ====================
+cryptography==42.0.8            # Encryption utilities
+pyOpenSSL==24.2.1               # SSL/TLS
+
+# ==================== MONITORING ====================
+psutil==6.0.0                   # System metrics
+prometheus-client==0.20.0       # Metrics export (optional)
+
+# ==================== TESTING (OPTIONAL) ====================
+# pytest==8.3.2                 # Testing framework
+# pytest-asyncio==0.23.8        # Async tests
+# pytest-cov==5.0.0             # Coverage reporting
+
+# ==================== DEVELOPMENT (OPTIONAL) ====================
+# black==24.8.0                 # Code formatter
+# flake8==7.1.1                 # Linter
+# mypy==1.11.1                  # Type checking
+# isort==5.13.2                 # Import sorter
