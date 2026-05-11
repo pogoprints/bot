@@ -1,0 +1,2843 @@
+You are an expert code reviewer and debugger. Your task is to thoroughly analyze the ENTIRE provided codebase, identify ALL bugs, errors, security vulnerabilities, performance issues, logical flaws, style inconsistencies, and potential improvements. Then, provide a fixed version of the complete code zip. CRITICAL RULES:
+Examine EVERY file, every line of code, function, import, dependency, and logic path systematically.
+Check for: syntax errors, runtime errors, edge cases, null/undefined handling, infinite loops, race conditions, memory leaks, SQL injection/XSS risks, inefficient algorithms (e.g., O(n^2) where O(n) possible), unused variables/code, broken async flows, incorrect error handling.
+Verify against best practices for the language/framework (detect from code).
+NEVER ignore any part—scan line-by-line if needed.
+Distinguish symptoms from root causes; explain WHY issues occur. STEP-BY-STEP PROCESS (output in this exact structure):
+SUMMARY: High-level overview of codebase (purpose, tech stack, size, major components).
+ISSUES FOUND: Numbered list. For each: Severity (Critical/High/Med/Low), Location (file:line), Description, Why it's a problem, Evidence from code.
+ROOT CAUSE ANALYSIS: For top 3-5 critical issues, deep dive with quotes from code.
+FIXED CODE: Provide the ENTIRE codebase zip with fixes applied.
+TEST RECOMMENDATIONS: 3-5 new unit/integration tests to verify fixes.
+POST-FIX VERIFICATION: Confirm fixes don't introduce new issues; re-scan summary. Codebase to analyze <web-api.js> <renderer.js> <styles> <index> <mobile> <sw.js> <README> <vercel.json> <manifest.json> <package.json> <and every other project file> Start analysis now. Be exhaustive—miss nothing. Send me the whole analysed and fixed zip Everything must work. Launch, Wallets, Funding, Bundling, Dev Wallet Management. Every Trade, Back To Dev Wallet, Trigger, Targets, Reached By, Budget Management, all other functions etc, Everything! Everything must work. Launch, Wallets, Funding, Bundling, Dev Wallet Management. Every Trade, Back To Dev Wallet, Trigger, Targets, Reached By, all other functions etc, Everything! —- I’ve sent this prompt many times, and every time new bugs appear, even though I clearly asked for everything to be fixed. This is getting frustrating—I need you to fix all issues properly, otherwise this could go on forever. — I've used this prompt multiple times, but new bugs keep emerging despite my requests to fix everything comprehensively. This is frustrating and risks an endless loop. Please take a fresh, thorough approach: audit the entire output for all issues (list them explicitly if needed), fix them completely in one go, and confirm no regressions or new problems are introduced. Provide the fully corrected version ready for production use. Focus If You Can Find NEW Bugs 
+
+Give me afterwards if all works perfectly a list with the emoji „✅“ and what’s working next to it, like ✅ launch ✅ wallet management ✅ funding ✅ buys and sells etc.. also make for every file like file 1 full working, no glitches or anything ✅ file 2 full working, no glitches or anything ✅ file 3 full working, no glitches or anything ✅ … and also if the system would work before all fixes applied or not and what’s better and what wouldn’t work in the previous version and what would work in the previous version and also ✅ trading system runs till trigger hit ✅ percantage trigger sell
+
+also make sure
+✅ Every buy and sell is fully unique
+✅ trades forever 24/7, non stop, trades every 5-10 seconds, without there being nothing left to trade and everything runs out, it only stops after sell trigger hit, all sold and back to dev wallet, never runs out of sol to trade 
+✅ all targets will be reached and the end of the time of the reached by period but still continued trading till auto sell trigger hit, all sold and back to dev wallet but is locked so it can’t go under the targets after reached by is reached, 
+
+✅ Also make sure that nothing is disrupted by non-bundle wallets when they buy or sell potions, so that the targets are still will be reached and work with what they still have to reach the targets and keep going afterwards if no trigger hit after non bundle wallets may sell small amounts, and it should only only stop after the trigger hit, all sold and back to dev wallet. 
+
+✅ Perform an elite review before you finish. Ask yourself: if I received this same prompt again, would I find any new bugs or issues? If the answer is yes, fix them and repeat the review process until the answer is no, even if that takes 100+ passes. If the answer is no, briefly explain why no further issues remain.
+
+✅ After every round of fixes, check whether the changes introduced new bugs or side effects. If they did, fix them and repeat the process until no new issues remain, even if that takes 100+ passes. If none were introduced, briefly explain why the fixes are stable.
+
+-
+
+You are a senior software architect, security auditor, QA lead, and production debugger.
+
+Your task is to perform a COMPLETE, zero-shortcut audit of the entire provided codebase, then deliver a production-ready fixed version.
+
+OBJECTIVE:
+Find ALL bugs, hidden bugs, regressions, logic flaws, broken flows, scalability issues, security risks, unstable behavior, edge-case failures, and weak architecture decisions. Then fix everything properly.
+
+You must think like:
+- A code reviewer
+- A penetration tester
+- A senior backend engineer
+- A frontend QA engineer
+- A performance engineer
+- A production incident responder
+
+NON-NEGOTIABLE RULES:
+
+1. Inspect EVERY file fully.
+2. Inspect EVERY line of code.
+3. Trace EVERY function call.
+4. Validate EVERY import/export.
+5. Check EVERY dependency and config file.
+6. Review ALL user flows end-to-end.
+7. Do NOT assume something works because it compiles.
+8. Do NOT stop after obvious bugs.
+9. Keep searching until no meaningful issues remain.
+10. If a fix creates another issue, fix that too.
+
+FILES TO ANALYZE:
+<web-api.js>
+<renderer.js>
+<styles>
+<index>
+<mobile>
+<sw.js>
+<README>
+<vercel.json>
+<manifest.json>
+<package.json>
+<and every other project file>
+
+PRIMARY SYSTEMS THAT MUST WORK PERFECTLY:
+
+- Launch
+- Wallet management
+- Funding
+- Bundling
+- Dev wallet management
+- Trade execution
+- Buy logic
+- Sell logic
+- Trigger system
+- Percentage trigger sell
+- Targets system
+- Reached-by timer logic
+- Return to dev wallet
+- Budget management
+- Multi-wallet flows
+- Background automation
+- Any hidden / secondary functions
+- UI flows
+- API flows
+- Persistence / storage
+- Error recovery
+
+CRITICAL FUNCTIONAL REQUIREMENTS:
+
+1. Every buy and sell must be uniquely executed.
+2. No duplicate trade execution.
+3. Trading loop must run 24/7 without freezing.
+4. Trades should continue every 5-10 seconds when conditions allow.
+5. System must never drain all SOL / capital unintentionally.
+6. Trading stops ONLY when sell trigger conditions are met.
+7. Once sold:
+   - all positions closed
+   - funds returned to dev wallet
+8. Targets must be reachable and enforced.
+9. Once “Reached By” deadline passes and target achieved:
+   - target floor must not break
+   - system can continue trading if rules allow
+10. Non-bundle wallets buying/selling small amounts must NOT break target logic.
+11. External wallet activity must be handled gracefully.
+12. Race conditions between wallets must be prevented.
+13. Failed transactions must retry safely.
+14. No wallet state corruption.
+15. No endless broken loops.
+16. No phantom balances.
+17. No stale UI state.
+18. No memory leaks.
+19. No security vulnerabilities.
+
+FULL AUDIT CHECKLIST:
+
+- Syntax errors
+- Runtime crashes
+- Undefined/null errors
+- Async timing bugs
+- Await mistakes
+- Promise leaks
+- Infinite loops
+- Retry storms
+- Deadlocks
+- Race conditions
+- Incorrect math
+- Percentage calculation bugs
+- Balance drift
+- Precision issues
+- Floating point issues
+- Timezone/timer bugs
+- Trigger misfires
+- Duplicate transactions
+- Partial sell failures
+- Unhandled exceptions
+- Broken API calls
+- UI desync
+- Incorrect state persistence
+- Performance bottlenecks
+- O(n²) issues
+- Memory growth
+- SQL injection
+- XSS
+- Unsafe secrets handling
+- Bad logging
+- Config mistakes
+- Dependency risks
+- Broken mobile behavior
+- Service worker bugs
+- Deployment issues
+- Production build issues
+
+MANDATORY PROCESS:
+
+PHASE 1: DISCOVERY
+- Map the entire architecture
+- Understand intended behavior
+- Identify all modules and interactions
+
+PHASE 2: STATIC ANALYSIS
+- Review all files line by line
+- Detect code smells and risks
+
+PHASE 3: DYNAMIC REASONING
+- Simulate real execution flows
+- Simulate edge cases
+- Simulate wallet failures
+- Simulate partial fills
+- Simulate rapid triggers
+- Simulate insufficient balance
+- Simulate network lag
+- Simulate concurrent actions
+
+PHASE 4: FIXING
+- Apply proper root-cause fixes
+- Refactor unsafe logic if required
+- Preserve intended features
+
+PHASE 5: REGRESSION REVIEW
+- Re-check all old and new code
+- Confirm fixes did not create new bugs
+
+PHASE 6: ELITE FINAL PASS
+Ask yourself:
+“If I received this same project again tomorrow, would I still find new bugs?”
+
+If YES:
+- Continue auditing
+- Fix them
+- Repeat until NO
+
+If NO:
+- Explain clearly why system is now stable
+
+OUTPUT FORMAT (STRICT):
+
+1. EXECUTIVE SUMMARY
+- What the project does
+- Tech stack
+- File count
+- Risk level before fixes
+- Production readiness before fixes
+
+2. FULL ISSUE REPORT
+For each issue provide:
+- ID
+- Severity (Critical / High / Medium / Low)
+- File + line
+- Problem
+- Root cause
+- User impact
+- Fix applied
+
+3. TOP ROOT CAUSE ANALYSIS
+Deep dive into top 5 most dangerous issues.
+
+4. FIXED CODEBASE
+Provide the FULL corrected project as downloadable ZIP.
+
+5. POST-FIX VERIFICATION
+Confirm:
+- Build passes
+- No regressions found
+- Critical flows verified
+- Stable for production
+
+6. WORKING FEATURES CHECKLIST
+Use this format:
+
+✅ Launch  
+✅ Wallet management  
+✅ Funding  
+✅ Bundling  
+✅ Dev wallet management  
+✅ Unique buys  
+✅ Unique sells  
+✅ Trigger sell  
+✅ Percentage trigger sell  
+✅ Targets system  
+✅ Reached-by logic  
+✅ Trading every 5-10 sec  
+✅ Runs 24/7  
+✅ Returns funds to dev wallet  
+✅ Non-bundle wallet resilience  
+✅ UI stable  
+✅ Mobile stable  
+✅ Deployment ready
+
+7. FILE STATUS REPORT
+For EVERY file:
+
+✅ file-name.ext fully working, no glitches, no blocking issues
+
+8. BEFORE VS AFTER
+Clearly state:
+
+Before fixes:
+- What worked
+- What failed
+- What was risky
+
+After fixes:
+- What now works
+- What improved
+- What was hardened
+
+9. FINAL HONESTY CHECK
+State one of these only:
+
+A) “No further material issues remain after repeated deep review.”
+or
+
+B) “Some risks remain:” and list them.
+
+IMPORTANT:
+Do NOT give shallow fixes.
+Do NOT skip hidden bugs.
+Do NOT stop at first pass.
+Do NOT assume user testing will catch problems later.
+
+Think like this project goes live tomorrow with real money at risk.
+
+Start now.
+
+Battle Test Everything. 
+
+You are a senior software architect, penetration tester, QA lead, and production incident responder auditing a Solana trading bot (pump.fun / pumpportal.fun, Vercel-deployed PWA). Real money is at risk. Treat this as a live production system.
+
+━━━ MANDATORY CONSTRAINTS ━━━
+• Inspect every file, every line, every function, every import.
+• Do NOT assume something works because it compiles or ran before.
+• Do NOT stop at the first pass. Keep searching until zero material issues remain.
+• If a fix introduces a regression, fix that too — repeat until stable.
+• After all fixes, ask: "Would I find new bugs if given this code tomorrow?" If yes, keep going.
+
+━━━ SYSTEMS THAT MUST WORK PERFECTLY ━━━
+Launch · Wallet generation · Funding · Bundling · Dev wallet management ·
+Trade execution (buys & sells) · Trigger system · % trigger sell ·
+Targets system · Reached-by deadline logic · Return-to-dev-wallet sweep ·
+Budget management · SOL recirculation · Multi-wallet orchestration ·
+Background automation (24/7 loop) · UI state & event handlers ·
+API flows · Persistence / localStorage · Error recovery · Mobile / PWA
+
+━━━ FUNCTIONAL REQUIREMENTS ━━━
+1. Every buy and every sell is uniquely executed — no duplicates.
+2. Trading loop runs 24/7, every 5–10 seconds, never freezing or draining all SOL.
+3. Loop stops ONLY when sell trigger conditions are fully met.
+4. On trigger: all positions closed, all SOL swept back to dev wallet.
+5. Targets must be reachable and enforced. Once "Reached By" deadline passes and target
+   is achieved, the floor must not break — trading continues until trigger fires.
+6. External / non-bundle wallet activity must not break target logic. System adapts and
+   continues toward targets with remaining balance.
+7. Failed transactions retry safely. No wallet state corruption. No phantom balances.
+8. No race conditions between wallets. No duplicate transaction submission.
+9. No stale UI. No memory leaks. No security vulnerabilities.
+
+━━━ AUDIT CHECKLIST ━━━
+Syntax · Runtime crashes · Null/undefined · Async/await mistakes · Promise leaks ·
+Infinite loops · Retry storms · Deadlocks · Race conditions · Incorrect math ·
+Percentage bugs · Balance drift · Floating-point precision · Timer/timezone bugs ·
+Trigger misfires · Duplicate transactions · Partial sell failures ·
+Unhandled exceptions · Broken API calls · UI desync · Stale state persistence ·
+O(n²) bottlenecks · Memory growth · SQL injection · XSS · Unsafe secrets ·
+Bad logging · Config mistakes · Broken mobile behavior · Service worker bugs ·
+Build / deployment issues
+
+━━━ PROCESS (6 phases, no shortcuts) ━━━
+
+PHASE 1 — DISCOVERY
+Map the full architecture. Understand every module and how they interact.
+Identify all state, async flows, timers, and external dependencies.
+
+PHASE 2 — STATIC ANALYSIS
+Read every file line by line. Flag code smells, unsafe patterns, and logic gaps.
+
+PHASE 3 — DYNAMIC SIMULATION
+Mentally execute these scenarios and trace what breaks:
+  • Normal happy-path launch to trigger
+  • Negative / zero / non-numeric inputs in every form field
+  • clusterSize input edge cases (negative, zero, NaN, float)
+  • Wallet funding with insufficient SOL
+  • Network timeout mid-trade
+  • Concurrent wallet actions on same mint
+  • Partial sell (some wallets fail)
+  • Non-bundle wallet buys / sells during active session
+  • Trigger fires during an in-flight trade
+  • Rapid repeated button clicks (launch, fund, sell)
+  • Session ends via sell-complete, sell-fail, and SOL-sweep paths
+  • Volume / stat counters across multiple consecutive launches
+  • Service worker cache returning stale assets after version bump
+
+PHASE 4 — FIX
+Apply root-cause fixes. Do not paper over symptoms. Preserve all intended features.
+Add inline comments explaining WHY each fix was necessary.
+
+PHASE 5 — REGRESSION CHECK
+Re-read all changed code. Confirm no fix introduced a new issue.
+Trace every simulation scenario again against the fixed code.
+
+PHASE 6 — ELITE FINAL PASS
+Ask: "If I received this project fresh tomorrow, would I find any new issues?"
+If YES → return to Phase 2 and repeat. If NO → proceed to output.
+
+━━━ OUTPUT FORMAT ━━━
+
+## 1. Executive Summary
+Project purpose · tech stack · file count · risk level before fixes · production-ready before fixes?
+
+## 2. Issue Report
+For EACH issue:
+  ID | Severity (Critical/High/Medium/Low) | File:line | Problem | Root cause | Impact | Fix applied
+
+## 3. Root Cause Deep-Dive
+Full analysis of the top 3–5 most dangerous issues, with code quotes showing before/after.
+
+## 4. Fixed Codebase
+Complete corrected project as a downloadable ZIP.
+All version strings bumped consistently (FORM_VERSION, CACHE_VERSION, package.json, engine badge, features array).
+
+## 5. Post-Fix Verification
+Confirm: build passes · no regressions · all simulation scenarios pass · stable for production.
+
+## 6. Working Features Checklist
+✅ Launch
+✅ Wallet management
+✅ Funding
+✅ Bundling
+✅ Dev wallet management
+✅ Unique buys
+✅ Unique sells
+✅ Trigger sell
+✅ Percentage trigger sell
+✅ Targets system
+✅ Reached-by logic (floor locked, trading continues until trigger)
+✅ Trading every 5–10 sec, 24/7
+✅ SOL recirculation (never runs dry)
+✅ Returns all funds to dev wallet on trigger
+✅ Non-bundle wallet resilience
+✅ UI stable (no stale state)
+✅ Mobile / PWA stable
+✅ Deployment ready
+
+## 7. File Status
+✅ filename.ext — fully working, no glitches
+
+## 8. Before vs After
+Before: what worked · what failed · what was risky
+After:  what now works · what improved · what was hardened
+
+## 9. Final Honesty Check
+State exactly one of:
+  A) "No further material issues remain after repeated deep review."
+  B) "Risks remain: [list them]"
+
+You are simultaneously: a senior Solana protocol engineer, a black-hat penetration tester, a production incident commander, a financial systems auditor, and a QA lead who has shipped zero-defect trading infrastructure.
+
+Real money is at risk. Treat every line as if a bug will cost someone's funds. There are no shortcuts.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PRIME DIRECTIVE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Find every bug that exists in this codebase — not just the obvious ones. Then fix all of them in a single pass with zero regressions. Then prove it.
+
+You are NOT allowed to:
+- Skip any file, function, import, or line
+- Assume something works because it compiled before
+- Stop after finding obvious bugs — keep going
+- Paper over symptoms — fix root causes only
+- Introduce any new bug while fixing another
+- Call something "fixed" without tracing every downstream effect
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SYSTEMS THAT MUST WORK PERFECTLY (zero tolerance)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+- Token launch pipeline (IPFS → create tx → authority revocations → wallet funding)
+- Wallet generation, funding, management, export
+- Dev wallet key management and balance tracking
+- BudgetLedger — SOL allocation, spend tracking, fee reserves
+- TradingEngine — buy/sell loop, pacing, recirculation, redistribution
+- RealMarketMonitor — polling, organic volume, trigger detection, baseMC persistence
+- Trigger system — multiplier threshold, fire sequence, no duplicate execution
+- Percentage trigger sell — exitPercentage through every code path
+- Targets + Reached-By — MC floor lock, post-deadline continuation, floor defense
+- SOL sweep — confirmation buffer, per-wallet jitter, fee floor, dev wallet receipt
+- Session resume — page reload, tab restore, visibility change, stuck-selling reset
+- Budget management — SOL recirculation, never-dry guarantee
+- Non-bundle wallet resilience — organic volume isolation, knownWallets refresh
+- UI state — no stale cards, no phantom balances, correct filter pills, live stats
+- Service Worker — cache versioning, offline fallback, message handling
+- Mobile / PWA — hamburger nav, bottom nav, viewport, touch targets
+- Deployment — Vercel headers, CSP, SRI, CORS, cache-control
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FUNCTIONAL REQUIREMENTS (non-negotiable)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1.  Every buy and every sell is uniquely parameterised — no duplicate slippage/fee/amount combos within the anti-repetition window.
+2.  Trading loop runs 24/7 every 5–10 seconds. It never freezes, never drains all SOL, never exits except on trigger.
+3.  SOL recirculates automatically. No wallet permanently falls out of rotation.
+4.  Loop stops ONLY when the organic sell trigger fires — not on deadline expiry, not on redistribution failure, not on any transient error.
+5.  On trigger: all positions closed → all SOL swept to dev wallet → status marked completed → UI updates instantly.
+6.  Targets must be reachable on schedule. Once "Reached By" deadline passes and target is achieved: MC floor is locked, floor cannot break, trading continues until trigger fires.
+7.  External/non-bundle wallet sells must not break target logic. System detects floor breach and increases buy pressure to restore it.
+8.  Failed transactions retry safely with backoff. No wallet state corruption. No phantom balances. No phantom funded counts.
+9.  No race conditions between concurrent wallet actions. No duplicate transaction submission. No double-trigger execution.
+10. Session resume after page reload must restart all engines with the original launch timestamp — deadline clock must NOT restart.
+11. All UI state reflects real on-chain state within one poll cycle. No stale toasts. No reversed message sequences. No misleading completion states.
+12. Service worker cache version bump must force asset refresh for all returning users.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+AUDIT CHECKLIST  (check every item, every file)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+LOGIC & CORRECTNESS
+□ Syntax errors, typos in identifiers, wrong variable names
+□ Incorrect operator precedence (|| vs ?? vs &&)
+□ Off-by-one errors in loops, slice/splice, index math
+□ Wrong comparison (== vs ===, < vs <=)
+□ Incorrect math — percentage calculations, SOL/lamport conversions, floating point drift
+□ Integer overflow — bitwise ops on values > 2³¹, lamport arithmetic
+□ Floating point precision — toFixed() on financial values, parseFloat edge cases
+□ NaN propagation — isNaN checks, null/undefined arithmetic
+□ Wrong fallback values — || vs ?? when 0 is valid
+□ Dead code that shadows live logic
+□ Functions defined but never called / called but never defined
+□ Wrong event bus channel names (emit vs on string mismatch)
+□ Incorrect sort/shuffle bias (Array.sort with random comparator)
+□ Hash space vs window size mismatches in anti-repetition buffers
+□ Trigger conditions that can fire before baseMC is established
+□ Timestamp units mixed (seconds vs milliseconds vs slots)
+
+ASYNC & CONCURRENCY
+□ Missing await on async calls
+□ Unhandled Promise rejections (fire-and-forget without .catch)
+□ Race conditions between concurrent wallet operations
+□ In-flight guards that don't cover all entry paths
+□ Listeners registered outside try/finally (leak on unexpected throw)
+□ setInterval returning Promise — rejection silently discarded
+□ Double-fire from rapid clicks, tab switch, or visibility change
+□ Timer not cleared on early signal abort (zombie timers)
+□ Retry storms — missing backoff, missing max-retry caps
+□ Deadlocks — two async functions waiting on each other's lock
+□ State mutations mid-await that corrupt the running operation
+
+SCOPE & LIFETIME
+□ let/const declared inside try{} but referenced outside (block-scope trap)
+□ Variables captured by closure before they are defined
+□ Module-level state not reset between sessions
+□ Session objects not cleaned up after stop() (memory leak)
+□ Event listeners stacking on repeated init() calls
+□ chartData / tokenPollIntervals / holders growing without bound
+□ Blob URLs never revoked
+□ localStorage keys growing without cleanup
+
+DATA INTEGRITY
+□ Storage reads returning non-array where array expected
+□ Corrupted wallet records (no address, no privateKey, no index) crashing batch operations
+□ Deployment records missing required fields after upgrade
+□ baseMC / mcFloor / allTargetsHit not persisted → lost on reload
+□ launchTime / id mismatch causing deadline clock restart
+□ exitPercentage NaN or out-of-range ([0,100]) reaching the API
+□ Phantom funded counts from invalid batch entries
+□ solPerWallet computed as 0 from zeroed BudgetLedger on cold resume
+
+SECURITY
+□ XSS — unsanitised user input in innerHTML / setAttribute
+□ CSS injection — mints with special chars in querySelector attribute selectors
+□ CSS.escape() missing on any data-mint selector string
+□ HTML attribute injection — missing esc() in template literals
+□ Private key stored or logged in plaintext beyond localStorage
+□ CSP missing sources for blob:, IPFS gateways, WebSocket endpoints
+□ SRI hash wrong or missing on CDN scripts
+□ Secrets in event payloads, console logs, or error messages
+□ URL injection via openExternal without validation
+
+PERFORMANCE
+□ O(n²) algorithms where O(n) or O(1) is possible
+□ N getLaunches() reads per poll cycle instead of one shared cache
+□ N localStorage reads inside inner loops
+□ Balance checks not batched (serial vs Promise.allSettled)
+□ Unbounded Sets / Maps / Arrays accumulating per mint or per session
+□ Redundant redistribute calls within the same cycle
+□ Canvas re-render on every trade event without debounce guard
+
+UI & STATE SYNC
+□ Toast messages in wrong semantic order relative to event emission sequence
+□ UI showing "sweeping" after sweep already completed (reversed message)
+□ Card status stuck in 'selling' after page reload
+□ Progress bar jumping backward during launch steps
+□ Token cards built for records with null mint (breaks all querySelector)
+□ Stale launch cache not invalidated after trigger fires
+□ Engine version badge blank on cold load (DOMContentLoaded race)
+□ Wallet balance not refreshed after sweep
+
+SERVICE WORKER
+□ CACHE_VERSION not bumped → returning users get stale assets
+□ SW message types broadcast to clients but no client handler exists
+□ Heartbeat CPU waste when sessions are idle
+□ SW fetch handler crashing on malformed / extension URLs
+□ Navigation fallback undefined when cache not yet populated
+□ skipWaiting / clients.claim sequence correct
+
+DEPLOYMENT & CONFIG
+□ vercel.json CSP matches index.html meta CSP exactly
+□ All external domains (RPC, pump.fun, DexScreener, IPFS gateways) in connect-src
+□ WebSocket endpoints (wss://) in connect-src
+□ sw.js served with no-cache, correct Content-Type, Service-Worker-Allowed
+□ All version strings consistent across package.json, sw.js, renderer.js, engine badge
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SIMULATION SCENARIOS  (trace every one mentally)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Run each scenario end-to-end. Identify exactly what breaks and where.
+
+LAUNCH PATHS
+S1.  Happy path: valid key → budget → generate wallets → fund → launch → trading → trigger → sell → sweep → completed
+S2.  Launch with 0 wallets pre-generated (launchToken funds from scratch)
+S3.  Launch immediately after wallet regeneration mid-session
+S4.  Rapid double-click on Launch button
+S5.  Launch fails at IPFS step — all 4 retries exhaust
+S6.  Launch fails at token create — RPC timeout mid-tx
+S7.  Launch succeeds but bundle funding partially fails (3/7 wallets funded)
+S8.  Second launch while first is still trading (two concurrent active mints)
+
+INPUT EDGE CASES
+S9.  clusterSize = 0, -5, NaN, "abc", 9999999
+S10. Budget = 0, negative, empty string, "abc"
+S11. exitPercentage = 0, -1, 101, NaN, ""
+S12. sellTrigger = 0, negative, "5x", "abc"
+S13. targetMC = 0, negative, NaN
+S14. targetDeadlineAmount = 0 (no deadline)
+S15. Private key = empty, whitespace-only, malformed base58, correct 32-byte, correct 64-byte
+
+WALLET STATES
+S16. One wallet in cluster has corrupted privateKey
+S17. One wallet has null address
+S18. All wallets below MIN_SOL simultaneously → _safeRedistribute fires
+S19. Dev wallet balance drops below 0.06 SOL during redistribution
+S20. Wallet regenerated while trading session is active (knownWallets stale)
+S21. All wallets have zero token balance when sell trigger fires
+
+TRIGGER & SELL
+S22. Trigger fires during in-flight _execBuy (concurrent buy + sell)
+S23. Trigger fires during _recirculateSol pass
+S24. Trigger fires exactly at deadline expiry
+S25. Manual Sell Now clicked during auto-sell 2-second timer window (double execution)
+S26. executeSellAll called when devKey is null (sweep block skipped)
+S27. _hasTokens RPC call fails for every wallet (optimistic fallback)
+S28. Some sell transactions succeed, some fail after 3 retries (partial sell)
+S29. Sweep RPC fails for half the wallets (SOL stranded)
+S30. auto-sell-triggered during a page reload visibility-change race
+
+SESSION RESUME
+S31. Page reload with 1 active session → RMM + TE restart correctly
+S32. Page reload with session stuck in 'selling' status → reset to active
+S33. Page reload with a very old record missing launchTime (uses id fallback)
+S34. Tab hidden for 10 minutes, then restored → _resumeActive debounce fires correctly
+S35. Two rapid tab focus events within 2 seconds → debounce prevents duplicate engine start
+S36. baseMC = 0 on resume (persisted value missing) → trigger threshold unreachable
+S37. allTargetsHit = true on resume but mcFloor = 0 (persisted partially)
+
+MARKET CONDITIONS
+S38. organicBuyVolUSD spikes on first poll tick after reload → false trigger (lastTradeTs fix)
+S39. No-sig trades appear in every poll tick → dedup counter reset validation
+S40. Non-bundle wallet sells 30% of supply → MC drops 40% below floor → floor defense
+S41. DexScreener returns null for new token (< 30 min old) → pump.fun primary covers
+S42. Both APIs fail simultaneously for one poll tick → no crash, next tick recovers
+S43. Token completes bonding curve (complete: true) → phase update, trading continues until trigger
+
+PERFORMANCE & LOAD
+S44. 5,000 wallet cluster — Promise.allSettled balance check completes in one pass
+S45. 200 active-session wallet sweep — RPC jitter prevents rate limit
+S46. 50 concurrent token poll intervals — _getCachedLaunches deduplication works
+S47. chartData grows to 160 points for 10 tokens → GC on card removal works
+S48. _recentParamHashes window saturates (> 40 entries) → fallback registers correctly
+
+UI & UX
+S49. User navigates to Tokens tab with 0 launches → empty state shown, no crash
+S50. User navigates to Settings then back to Launch → wallet balance refreshed
+S51. Token card built for record with mint containing CSS-special characters
+S52. Logo load fails (stale blob URL after reload) → initials fallback shown
+S53. Filter pills: switch between All / Active / Completed during sell phase
+S54. Resize window → chart canvas redraws without distortion
+
+SECURITY
+S55. Malformed localStorage value injected as deployments array (string instead of array)
+S56. Mint address containing "><script> in stored record → esc() / CSS.escape() defends
+S57. User enters private key in non-HTTPS context → clipboard.writeText guard fires
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+MANDATORY 7-PHASE PROCESS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+PHASE 1 — ARCHITECTURE MAP
+Map every module, every public API, every event bus channel, every localStorage key, every async flow. Identify all state that crosses boundaries (renderer ↔ web-api, main thread ↔ SW, memory ↔ localStorage). Note every assumption each module makes about other modules.
+
+PHASE 2 — LINE-BY-LINE STATIC ANALYSIS
+Read every file completely. Flag every item from the audit checklist. Categorise by severity. Do not start fixing yet — catalogue everything first so fixes don't mask each other.
+
+PHASE 3 — DYNAMIC SIMULATION
+Mentally execute all 57 scenarios. For each: state the starting condition, trace the code path step by step, identify the exact line that breaks (if any), state the failure mode (crash / silent wrong result / data corruption / stale UI / stranded funds).
+
+PHASE 4 — ROOT-CAUSE ATTRIBUTION
+For each bug found: identify whether it is a symptom or a root cause. Group symptoms that share a root cause. Fix root causes, not symptoms. If fixing a root cause also resolves several symptoms, document which ones.
+
+PHASE 5 — IMPLEMENT FIXES
+Apply every fix. For each fix:
+  • Quote the before code
+  • Quote the after code  
+  • Add an inline comment starting with // FIX rNN explaining WHY (not just what)
+  • Verify the fix does not break any other caller of the same function
+  • Verify the fix does not introduce a new assumption that could break under any simulation scenario
+
+PHASE 6 — REGRESSION VERIFICATION
+Re-read every changed function completely. Re-run all 57 simulation scenarios against the fixed code. For each fix ask: "Does this change the behaviour of any other code path I haven't explicitly accounted for?" If yes, trace that path and fix if needed.
+
+PHASE 7 — ELITE FINAL PASS (mandatory, not optional)
+Ask yourself exactly this question: "If I received this exact project file tomorrow with no prior context, and ran the same audit, would I find any new bugs?"
+
+If the answer is YES → return to Phase 2. Do not skip this. Do not abbreviate it. Repeat until the answer is genuinely NO.
+
+If the answer is NO → document exactly why no further issues remain. Reference specific fixes that closed specific risk categories. This explanation must be specific enough that a different engineer could verify it.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+REGRESSION INTRODUCTION TEST (after every fix)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+After each fix, answer all three:
+1. Does this change break any caller of the modified function?
+2. Does this change affect any event payload a listener depends on?
+3. Does this change alter any value stored in localStorage that a resume path reads?
+
+If any answer is YES → trace the full downstream impact and fix it before moving on.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+VERSION DISCIPLINE (required on every pass)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Every pass must consistently bump ALL of:
+□ sw.js  CACHE_VERSION          (forces cache eviction for returning users)
+□ package.json  version          (semantic record)
+□ renderer.js  FORM_VERSION      (triggers StateManager re-init from fresh defaults)
+□ Both engine-version badge strings (boot emit + launchToken emit)
+□ features[] array in both badge emits (append new rNN fix labels)
+□ Version comment at top of web-api.js fix log
+
+Mismatched versions across these files are themselves a bug.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+REQUIRED OUTPUT FORMAT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+## 1. EXECUTIVE SUMMARY
+Project purpose · tech stack · file count · total lines · risk level before fixes · production-ready before fixes (yes/no with reason)
+
+## 2. FULL ISSUE REPORT
+For each issue:
+ID | Severity | File:line | Problem description | Root cause (not symptom) | Failure mode | Simulation scenarios affected | Fix applied (one sentence)
+
+Sort by severity: Critical → High → Medium → Low
+
+## 3. ROOT CAUSE DEEP-DIVE
+For the top 5 most dangerous issues:
+- Before code (quoted)
+- Why it breaks (mechanistic explanation)
+- Simulation scenario that triggers it
+- After code (quoted)
+- Downstream effects verified
+
+## 4. FIXED CODEBASE
+Complete corrected project as downloadable ZIP.
+All version strings bumped consistently. All inline // FIX rNN comments present.
+
+## 5. REGRESSION VERIFICATION TABLE
+For each fix: Fix ID | Changed function | Callers checked | Event payloads verified | localStorage impact | Result (clean / fixed secondary issue)
+
+## 6. WORKING FEATURES CHECKLIST
+✅ Launch
+✅ Wallet management
+✅ Funding
+✅ Bundling
+✅ Dev wallet management
+✅ Unique buys (anti-repetition enforced)
+✅ Unique sells (anti-repetition enforced)
+✅ Trigger sell (organic MC × multiplier)
+✅ Percentage trigger sell ([0,100] clamped end-to-end)
+✅ Targets system (MC floor locked at target hit)
+✅ Reached-by logic (floor locked, trading continues until trigger)
+✅ Floor defense (buy pressure increased when MC drops below floor)
+✅ Trading every 5–10 sec, 24/7 (pacing engine)
+✅ SOL recirculation (never runs dry)
+✅ Returns all funds to dev wallet on trigger
+✅ Correct sweep confirmation buffer
+✅ Non-bundle wallet resilience (knownWallets refresh, organic isolation)
+✅ Session resume (launchTime preserved, engines restart correctly)
+✅ UI stable (no stale state, correct toast order, live stats)
+✅ Mobile / PWA stable
+✅ SW cache versioning (returning users get fresh assets)
+✅ Deployment ready (CSP, SRI, Vercel headers)
+
+## 7. FILE STATUS
+✅ filename.ext — fully working, no glitches | changed: [list of fixes applied] | unchanged: confirm
+
+## 8. SIMULATION RESULTS
+For each of the 57 scenarios: S## | Result (PASS / FAIL) | If FAIL: line number and fix applied
+
+## 9. BEFORE vs AFTER
+Before: what worked · what failed · what was risky · what stranded funds
+After: what now works · what improved · what was hardened · what can no longer strand funds
+
+## 10. FINAL HONESTY CHECK
+State exactly one of:
+  A) "No further material issues remain. Evidence: [specific list of closed risk categories with fix IDs]"
+  B) "Risks remain: [explicit list with severity, location, and reason unfixed]"
+
+Do not write A unless the Elite Final Pass genuinely returned NO new findings.
+Do not write vague reassurances. Be specific. Be honest.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SOLANA ASSET STUDIO — ELITE PRODUCTION AUDIT PROMPT  vDeep
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+IDENTITY
+────────
+You are simultaneously:
+
+  1. A senior Solana blockchain engineer who knows how
+     pump.fun, pumpportal.fun, and Solana RPC behave
+     under real-network conditions — confirmation latency,
+     rate limits, base fee spikes, getBalance lag, and
+     transaction finality timing.
+
+  2. A financial-systems engineer who treats every SOL
+     amount as real money. You think in terms of stranded
+     funds, double-spends, phantom balances, incorrect fee
+     accounting, and worst-case capital loss.
+
+  3. A penetration tester who probes every data boundary:
+     localStorage injection, XSS via untrusted token
+     metadata, CSP bypasses, private-key exposure paths,
+     and unsafe clipboard usage.
+
+  4. A concurrency specialist who maps every async flow,
+     every event-bus channel, and every shared-state
+     mutation — looking for race conditions, torn reads,
+     and stale-closure traps.
+
+  5. A QA lead who has written every failure scenario the
+     system can encounter: bad input, partial success,
+     mid-operation page reloads, interrupted sweeps,
+     browser tab switching, network loss mid-transaction,
+     and re-entry from concurrent triggers.
+
+  6. A production incident responder who has seen systems
+     fail silently at 3 a.m. You know that the most
+     dangerous bug is the one that produces no error, just
+     a wrong result — a sell that sends '0%', a balance
+     that never updates, a sweep that confirms but returns
+     nothing.
+
+Real SOL is at stake. Every line of code is a liability
+until proven safe.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ABSOLUTE NON-NEGOTIABLE RULES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+R1.  Read EVERY file. No file is too short to skip. Config
+     files, README, CSS — all contain bugs that have burned
+     real money (wrong CSP blocks the Web3.js script; wrong
+     SRI hash kills every transaction silently).
+
+R2.  Read EVERY line. Not every function — every line.
+     A misplaced `||` vs `??` can silently override an
+     explicit 0% sell and execute a 100% dump.
+
+R3.  Trace EVERY async boundary. Every `await`, every
+     `.then()`, every `setInterval`, every `setTimeout`,
+     every event-bus `emit` and listener. Map the full
+     call graph. Identify every place where a Promise
+     is created but never awaited or caught.
+
+R4.  Follow EVERY data path that touches SOL amounts or
+     percentages end-to-end. A value that originates in
+     the UI (user input), passes through localStorage,
+     gets read on resume, flows into a trade function, and
+     is formatted into an API string — EVERY transform on
+     that path must be validated. One missing clamp is a
+     stranded-funds scenario.
+
+R5.  Distinguish symptoms from root causes. If five
+     functions all misbehave with the same NaN input,
+     the root cause is one unguarded parse — not five
+     separate bugs.
+
+R6.  Never assume a fix is safe because the call-site
+     looks right. Check every caller. Check every
+     serialised value in localStorage a resumed session
+     might read back. Check every event payload a
+     downstream listener depends on.
+
+R7.  Every fix you apply must pass three gate questions:
+     (a) Does it break any caller of the modified function?
+     (b) Does it change any event payload shape that a
+         listener depends on?
+     (c) Does it alter any localStorage value that a
+         resume path reads?
+     If any answer is YES, trace the full impact and fix
+     it before moving on.
+
+R8.  Version discipline is mandatory on every pass. All
+     of these must be bumped consistently and atomically:
+     □ sw.js  CACHE_VERSION
+     □ package.json  version
+     □ renderer.js  FORM_VERSION
+     □ Both engine-version badge strings
+       (boot emit + launchToken emit)
+     □ features[] array in both badge emits
+     □ FIX LOG comment block at top of web-api.js
+     Mismatched versions are themselves a production bug:
+     returning users get stale cached assets that silently
+     contradict the new code.
+
+R9.  The Elite Final Pass is not optional. Before
+     delivering output, ask yourself:
+     "If I received this exact project tomorrow with no
+     prior context and ran this same audit, would I find
+     any new bugs?"
+     If YES → return to Phase 2 and repeat.
+     If NO  → document specifically why each risk category
+     is now closed.
+
+R10. After every round of fixes, explicitly ask:
+     "Did any of my fixes introduce a new bug or side
+     effect?" If yes, fix that too. Continue until the
+     answer is genuinely no.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SYSTEMS THAT MUST WORK PERFECTLY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Every item below must be provably correct — not "probably
+works" but verifiably correct based on code inspection:
+
+CAPITAL FLOWS
+  · Launch buy: correct SOL amount, correct mint, correct
+    authority revocations
+  · Bundle wallet funding: correct per-wallet amount,
+    correct batch count, correct confirmed-count returned
+  · SOL recirculation: holders sold, proceeds stay in
+    bundle wallets, wallets topped up correctly from dev
+  · Sweep: all sell proceeds confirmed before sweep fires,
+    full SOL transferred to dev wallet, fee floor correct
+  · Budget ledger: spend tracked correctly, no phantom
+    spend, no over-spend
+
+TRADING ENGINE
+  · Every buy is unique: amount, slippage, fee tier, timing
+  · Every sell is unique: pct, slippage, fee tier, timing
+  · Anti-repetition buffer never saturates permanently
+  · Pacing engine produces steady trade rate from trade #1
+  · Trading runs every 5–10 seconds, 24/7, never freezes
+  · Trading stops ONLY when trigger fires or stop() called
+  · Deadline expiry continues trading — does not halt it
+  · Recirculation fires on schedule and restores SOL supply
+  · _safeRedistribute fires at most once per wallet-loop pass
+
+TRIGGER & SELL
+  · Organic trigger threshold calculated with raw on-chain MC
+  · exitPercentage [0,100] clamped at every entry point
+    (UI → record write → executeSellAll → _executeSellReal
+     → RMM auto-trigger path — all five must clamp)
+  · No double-execution race between auto-trigger and
+    manual Sell Now
+  · Sell loop skips wallets with no tokens (no wasted fees)
+  · 9-second confirmation buffer before sweep
+  · Sweep correctly handles per-wallet failures gracefully
+
+TARGETS & FLOOR
+  · MC floor locked the moment allTargetsHit flips true
+  · Floor and baseMC both persisted to storage immediately
+  · Floor defense signal increases buy pressure if MC falls
+  · Floor never released until trigger fires
+  · Reached-by deadline does not halt trading
+
+SESSION RESUME
+  · launchTime OR id used as absolute deadline base
+    (old records missing launchTime must not restart clock)
+  · 'selling' status reset to 'active' on cold reload only,
+    never mid-session
+  · BudgetLedger re-initialised before engines restart
+  · baseMC and mcFloor correctly restored from storage
+  · Blob URLs stripped before resume (stale after reload)
+  · knownWallets rebuilt at resume to catch mid-session
+    wallet regeneration
+
+UI & EVENTS
+  · All event-bus handlers have null guard on payload
+  · All async fire-and-forget calls have .catch()
+  · All sell/fund/generate buttons have try/finally
+    (button always re-enabled)
+  · Wallet balance sidebar refreshes after sweep
+  · Token cards rebuild only when status actually changes
+  · Chart canvas redraws correctly on resize (HiDPI)
+  · Version badge populated at cold boot, not just on launch
+
+SECURITY
+  · SRI hash on @solana/web3.js CDN script is correct
+  · CSP allows all required connect-src + img-src + wss://
+  · All user data HTML-escaped before DOM insertion
+  · CSS.escape() on all mint strings in querySelector
+  · Private key validated before storage
+  · No clipboard API usage without guard + fallback
+  · No secrets in console logs
+
+SERVICE WORKER
+  · CACHE_VERSION bump evicts all previous cached assets
+  · SW message handler consumes all known message types
+  · fetch handler guarded against special-scheme URLs
+  · SW heartbeat sessions cleaned up when empty
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+DEEP AUDIT CHECKLIST  (go through every item for every file)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+NUMERIC CORRECTNESS
+  □ Every || vs ?? decision on numeric fields
+    (0 is a valid value for exitPercentage, autoSellMultiplier,
+     targetDeadlineMs; || coerces them to defaults silently)
+  □ Every parseInt / parseFloat — does it have a radix? Does
+    the result get an isNaN guard? Does it get clamped?
+  □ Every Math.floor / Math.round / Math.ceil — is it being
+    used where the other two should be?
+  □ Every percentage computation: is it / 100 or * 100?
+    Does the denominator get a zero-division guard?
+  □ Every SOL ↔ lamport conversion: × 1e9 or / 1e9,
+    never mix directions, never apply twice
+  □ Every floating-point comparison used for currency
+    (should use integer lamports instead)
+  □ Every toFixed(N) — does it produce a string that gets
+    passed to an API that expects a number?
+
+ASYNC / CONCURRENCY
+  □ Every setInterval callback that is async — is the
+    returned Promise caught somewhere?
+  □ Every async function called fire-and-forget — does it
+    have .catch(console.warn)?
+  □ Every function guarded by an in-flight flag — is the
+    flag set BEFORE the first await, or after?
+    (Setting after creates a race window)
+  □ Every shared mutable state accessed across awaits —
+    could it be changed by another concurrent call
+    between the read and the write?
+  □ Every retry loop — does it have an exponential backoff?
+    Does it have a maximum? Could it loop forever?
+  □ Every Promise.allSettled — are rejected results
+    handled, or silently ignored?
+  □ Every setTimeout / setInterval ID — is it stored and
+    cleared when no longer needed?
+  □ Every event-bus listener — is it removed when the
+    component/session that registered it is destroyed?
+    (Accumulated listeners = buy-bias runaway bug pattern)
+
+SCOPE & CLOSURE
+  □ Every variable declared inside try{} — is it
+    referenced outside try{}? (const/let are block-scoped;
+    this is the _validInBatch / _allDeps class of bug)
+  □ Every variable captured in a closure used after an
+    await — could the outer scope have changed it?
+  □ Every loop variable captured in a callback — is it
+    the correct iteration value or the final loop value?
+
+STATE MACHINE COMPLETENESS
+  □ Deployment status transitions: null → active →
+    selling → completed. Are all transitions handled?
+    Can any transition be skipped, duplicated, or reversed
+    incorrectly? What happens if the process restarts in
+    each state?
+  □ TradingEngine session states: not started → running
+    → triggerFired → stopped. Can start() be called when
+    already running? Can fireTrigger() fire twice?
+    Can stop() leave the session in a restart-blocked state?
+  □ RealMarketMonitor session states: mirror the above.
+    Are RMM and TE always stopped and started together?
+    Can one be running while the other is stopped?
+  □ UI launch flow: idle → launching → success/failure.
+    Can isLaunching get stuck true? Is every failure path
+    covered by try/finally?
+
+DATA INTEGRITY & PERSISTENCE
+  □ Every _storageGet that returns an array — does it have
+    Array.isArray() guard? JSON.parse of malformed data
+    can return an object, a string, or null — not an array.
+  □ Every _storageSet that writes back a mutated array —
+    if it fails (storage quota exceeded), is the in-memory
+    state still consistent?
+  □ Every field written to a deployment record — is there
+    a corresponding read on resume that uses it correctly?
+    (Orphaned writes that are never read back are dead code;
+    fields read on resume that were never written are
+    undefined-on-resume bugs)
+  □ Every blob: URL stored in a deployment record —
+    stripped on resume? (Invalid after page reload)
+  □ Stale cache race: when the launches cache is
+    invalidated externally, can an in-flight fetch IIFE
+    overwrite the fresh data with stale data?
+  □ All localStorage keys consistently namespaced —
+    no 'sas:sas:' double-prefix bugs
+
+SECURITY & INJECTION
+  □ Every innerHTML / insertAdjacentHTML assignment —
+    all user-controlled values passed through esc()?
+  □ Every CSS attribute selector built with user data —
+    CSS.escape() applied?
+  □ Every URL built with user data — encoded?
+  □ Every console.log that could print a private key,
+    balance, or other sensitive value?
+  □ CSP: does it allow all domains the code actually
+    fetches? Does it block any domain the code needs?
+    Are wss:// entries present for all RPC WebSocket
+    connections?
+  □ SRI hash: is it the correct sha384 for the exact
+    version and file being served? Wrong hash =
+    Web3.js never loads = all transactions silently fail.
+  □ Permissions-Policy header: correct scope for
+    clipboard-write?
+  □ Private key: is it ever logged, included in error
+    messages, or passed in a URL parameter?
+
+SOLANA / BLOCKCHAIN-SPECIFIC
+  □ Every getBalance call: returns {value: lamports} not
+    lamports directly on some RPC nodes — extraction
+    pattern must handle both
+  □ Every transaction: does it await confirmation before
+    spending the resulting balance? Unconfirmed balance
+    is not spendable.
+  □ Every sweep: does it run AFTER sell confirmation,
+    not immediately after sell submission?
+  □ Every priority fee: is it high enough to avoid
+    validator queue drop under congestion?
+  □ Every batch size: within Solana's 1232-byte
+    transaction size limit?
+  □ Every RPC endpoint rotation: does the Connection
+    object get refreshed, or does the stale connection
+    continue to use the old endpoint?
+  □ knownWallets: is it rebuilt often enough that
+    mid-session wallet regeneration doesn't contaminate
+    the organic buy volume measurement?
+  □ lastTradeTs initialisation: does it prevent the
+    first-poll false-trigger on page reload?
+
+PERFORMANCE & SCALABILITY
+  □ Every loop over wallets × something else — is it
+    O(N) or O(N²)? At 5000 wallets O(N²) is catastrophic.
+  □ Every getLaunches() call — is it going through the
+    cache, or firing a fresh read on every poll tick?
+  □ Every querySelector inside a hot loop — can it be
+    hoisted or replaced with a Map lookup?
+  □ chartData: does it grow without bound? Is it cleared
+    when a token card is removed?
+  □ _pollInflight: does it use delete (removes the key)
+    or = false (accumulates dead keys forever)?
+  □ Event listeners: are they added with { passive: true }
+    where they don't call preventDefault?
+
+MOBILE / PWA
+  □ Does every touch interaction work without hover?
+  □ Does the sidebar open/close correctly on mobile?
+  □ Does the bottom nav correctly sync with sidebar state?
+  □ Are all font sizes, tap targets, and spacing
+    comfortable on a 375px screen?
+  □ Does the SW register and serve assets correctly
+    in standalone PWA mode?
+  □ Does the app recover from background kill and
+    re-open without a blank screen?
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FIVE DEEP-THINKING LENSES
+(Apply all five to every significant bug you find)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+LENS 1 — THE STRANDED-FUNDS LENS
+  "Could this bug cause SOL or tokens to be permanently
+  unrecoverable — even if the user refreshes or retries?"
+  Stranded-funds bugs are the highest severity because they
+  have no recovery path. Ask this for every transaction,
+  every sweep, every sell, every redistribution.
+
+LENS 2 — THE SILENT-FAILURE LENS
+  "Could this bug produce a wrong result with no error,
+  no console log, and no visible sign to the user?"
+  Silent failures are deadlier than crashes. A crash tells
+  the user something went wrong. A silent failure lets them
+  believe everything is fine while their position is open,
+  their sweep returned nothing, or their SOL is draining.
+
+LENS 3 — THE WORST-CASE-RESUME LENS
+  "What is the worst possible state this could be in after
+  a page reload — tab crash — browser kill — network loss?"
+  For every piece of state, ask: if the process died right
+  here, what would _resumeActive find, and would it do the
+  right thing?
+
+LENS 4 — THE OLD-RECORD LENS
+  "What happens if this code runs against a deployment
+  record created 10 versions ago, before this field
+  existed?"
+  Fields added in later releases are undefined in old
+  records. Every read of a stored field needs a sane
+  default or it becomes the root cause of a class of bugs
+  that is incredibly hard to reproduce in development but
+  triggers reliably for users who have been using the app
+  for a while.
+
+LENS 5 — THE CONCURRENT-ACTION LENS
+  "What happens if two things happen simultaneously that
+  the developer assumed would be sequential?"
+  Organic trigger fires + user clicks Sell Now.
+  Page becomes visible + trigger fires during the 2s timer.
+  Wallet regeneration during a recirculation pass.
+  Two rapid launchToken calls from double-click.
+  Every shared guard (in-progress flags, session maps)
+  must be set BEFORE the first await, not after.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+INVARIANT VERIFICATION
+(Prove each of these holds after every fix)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+I1. exitPercentage ∈ [0, 100] at every point in the
+    pipeline: UI parse → record write → executeSellAll
+    → _executeSellReal → auto-trigger path.
+    A value outside this range at any point causes either
+    a no-op sell (negative → 0) or an impossible over-sell
+    (>100 → API rejection).
+
+I2. The TradingEngine loop only stops when:
+    (a) TradingEngine.stop(mint) is called, OR
+    (b) TradingEngine.fireTrigger(mint) is called.
+    It MUST NOT stop due to deadline expiry, redistribution
+    failure, recirculation error, or any other condition.
+
+I3. executeSellAll(mint) is idempotent with respect to
+    completion: calling it twice for the same mint must not
+    produce double sells, duplicate toasts, or duplicate
+    localStorage writes.
+
+I4. The deployment record status for a mint follows exactly
+    one forward-only path:
+    active → selling → completed.
+    No backward transitions. No skipped states.
+    The ONLY exception is 'selling' → 'active' on a cold
+    reload when the sell was interrupted.
+
+I5. state.mc in RMM is always ≥ state.mcFloor when
+    allTargetsHit is true. The floor is never released.
+    state.mc = Math.max(td.mc, state.mcFloor) must hold
+    in every code path that updates state.mc.
+
+I6. knownWallets contains the dev wallet address and all
+    current bundle wallet addresses at all times. A trade
+    from any of these addresses must NEVER be counted as
+    organic buy volume.
+
+I7. totalSwept SOL returned to dev wallet equals the sum
+    of (confirmed balance − FEE_FLOOR) for every bundle
+    wallet that had a non-trivial balance at sweep time.
+    No wallet is swept more than once. No wallet that was
+    already empty is attempted.
+
+I8. The anti-repetition buffer for trade parameters
+    (_recentParamHashes) never permanently saturates:
+    window size (40) < hash space (45 unique fingerprints).
+    Every fallback call must register its hash in the
+    buffer, not bypass it.
+
+I9. Every event-bus listener attached inside a trading
+    session (e.g., mc-pace) is removed when that session
+    ends — whether it ends normally, via trigger, via
+    error, or via stop(). Failure here accumulates
+    listeners that compound buy-bias indefinitely.
+
+I10. The _absoluteDeadline used by TradingEngine._loop
+     is computed from params.launchTime || params.id ||
+     Date.now() — never from Date.now() alone on a resumed
+     session, which would silently restart the deadline
+     clock and extend trading beyond the configured window.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SIMULATION SCENARIOS  (trace every one step by step)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+For each scenario, state:
+  • Starting condition (what is in memory / storage / DOM)
+  • Exact code path taken, line by line
+  • Exact line where it fails (if it fails)
+  • Failure mode: crash / silent wrong result / stranded
+    funds / stale UI / data corruption / no failure
+
+LAUNCH PATHS
+S1.  Full happy path: valid key → budget set → wallets
+     generated → funded → launch → trading → organic
+     trigger hit → all sold → sweep → completed card shown
+S2.  Launch with 0 pre-generated wallets (no clusterAccounts)
+S3.  Second launch while first token is still trading
+     (two concurrent active mints, two TE sessions, two RMM
+     sessions, two poll intervals)
+S4.  Rapid double-click on Launch button
+     (re-entry guard must block second call)
+S5.  Launch while _sasLaunchInProgress is already true
+     (e.g., from a second browser tab)
+S6.  IPFS fails all 4 retries → metadataUri is empty →
+     token creates on-chain with no name/logo
+S7.  Token create RPC call times out → 3 retries exhaust →
+     user sees error, no orphan session created
+S8.  Bundle wallet funding partially fails (batch 3 of 7
+     batches fails all 3 retries) → confirmed count correct
+S9.  Wallet regenerated immediately before Launch is clicked
+     → clusterAccounts refreshed correctly
+
+INPUT EDGE CASES
+S10. clusterSize entered as -5, 0, "abc", 99999
+S11. Budget entered as 0, negative, empty, "abc"
+S12. exitPercentage entered as -1, 0, 101, 200, NaN, ""
+S13. sellTrigger entered as 0, negative, "5x", "abc"
+S14. targetMC entered as 0, negative, NaN
+S15. targetDeadlineAmount = 0 (no deadline configured)
+S16. Private key = empty string, whitespace-only, 31 bytes,
+     33 bytes, correct 32-byte seed, correct 64-byte keypair
+
+WALLET STATES
+S17. One wallet record has null privateKey (corrupted storage)
+S18. One wallet record has null address (corrupted storage)
+S19. All 5000 wallets below MIN_SOL simultaneously
+     (_safeRedistribute must fire ONCE, not 5000 times)
+S20. Dev wallet balance = 0.05 SOL (just below redistribution
+     threshold) — all wallets stay below MIN_SOL forever
+S21. Dev wallet balance = 0 during sweep
+S22. Bundle wallet regenerated mid-session while TE loop
+     is between wallet iterations (wallets slice is stale,
+     _walletMap is stale, knownWallets is stale)
+S23. All wallets have zero token balance when trigger fires
+     (every _hasTokens returns false → no sells needed)
+S24. One wallet has a token account but uiAmount = 0
+     (dust) → should skip, not waste fees
+
+TRIGGER & SELL
+S25. Organic trigger fires during an in-flight _execBuy
+     (TradingEngine is mid-trade when fireTrigger is called)
+S26. Organic trigger fires during _recirculateSol pass
+     (recirculation must break immediately, not continue)
+S27. Manual Sell Now clicked during the 2-second delay
+     between fireTrigger and executeSellAll
+     (_sellInProgress guard must prevent double execution)
+S28. Manual Sell Now clicked during executeSellAll
+     (second call must be blocked, not queued)
+S29. executeSellAll called when devKey is null
+     (sweep block is skipped, swept:false emitted correctly)
+S30. _hasTokens RPC fails for every wallet
+     (optimistic fallback: proceed with sell attempts)
+S31. 60% of sell transactions fail all 3 retries
+     (partial sell: some positions still open,
+     sweep must still fire for the SOL that was freed)
+S32. Sweep getBalance returns 0 for half the wallets
+     (sell proceeds not yet confirmed — why 9s buffer exists)
+S33. Sweep sendTransaction fails for 3 of 10 wallets
+     (SOL stranded in those 3 wallets; no crash, error logged)
+
+SESSION RESUME
+S34. Cold reload with 1 active session (all fields present)
+S35. Cold reload with very old record: launchTime missing,
+     uses params.id as deadline base
+S36. Cold reload with session stuck in 'selling' status
+     (sell was interrupted by tab close; reset to active)
+S37. Cold reload with allTargetsHit=true but mcFloor=0
+     (partially persisted state — floor must be defended)
+S38. Cold reload with baseMC=0 (never latched before crash)
+     (trigger threshold becomes unreachable until re-latched)
+S39. Tab hidden for 20 minutes then restored
+     (visibilitychange fires → 2s debounce → _resumeActive)
+S40. Two rapid focus events within 2 seconds
+     (debounce prevents duplicate engine start)
+S41. _resumeActive called while executeSellAll is in progress
+     (status='selling' must prevent TE restart)
+
+MARKET CONDITIONS
+S42. organicBuyVolUSD spikes on first poll tick after reload
+     due to 50 old trades passing the filter
+     (lastTradeTs initialized to Date.now()-5000 prevents)
+S43. Same no-sig trade appears in 3 consecutive poll ticks
+     (per-tick counter reset prevents cross-tick double-count)
+S44. Non-bundle wallet sells 40% of supply → real MC drops
+     60% below floor → floor defense signal fires →
+     buy pressure restored → MC recovers → trading continues
+S45. Both pump.fun and DexScreener fail simultaneously
+     for an entire poll tick → no crash, state unchanged,
+     next tick recovers normally
+S46. Token bonding curve completes (complete:true from API)
+     → phase updates, trading does NOT stop
+
+PERFORMANCE & SCALE
+S47. 5,000 wallet cluster: all balance reads in ONE
+     Promise.allSettled, not 715 serial batches
+S48. 200 active wallets swept: per-wallet 0-200ms jitter
+     prevents RPC rate limit
+S49. 50 concurrent token poll intervals: _getCachedLaunches
+     deduplication means one getLaunches read per TTL window
+S50. chartData for 10 tokens × 160 points grows to its cap
+     then stops growing (shift() removes oldest)
+S51. _recentParamHashes saturates to exactly 40 entries
+     and correctly ages out oldest entries
+S52. _pollInflight uses delete not = false
+     (no unbounded key accumulation over session lifetime)
+
+UI & UX
+S53. Tokens tab visited with 0 launches
+     (empty state shown, no card build attempted)
+S54. Navigate to Settings → balance refreshes
+     → navigate back to Tokens → cards still correct
+S55. Token card built for record where mint contains
+     CSS-special characters (CSS.escape defends)
+S56. Logo img fails to load (stale blob URL after reload)
+     → initials fallback shown immediately
+S57. Filter pill 'active' clicked during sell phase
+     → SELLING… card is visible (data-status='active')
+S58. Window resized → all chart canvases redraw correctly
+     at the correct DPR
+
+SECURITY
+S59. Malformed localStorage: deployments = "not-an-array"
+     → Array.isArray guard returns [], no crash
+S60. Mint address containing "><script>alert(1)</script>"
+     in a stored deployment record
+     → esc() and CSS.escape() prevent XSS and selector injection
+S61. User on http:// (non-HTTPS) tries to copy address
+     → navigator.clipboard undefined guard + execCommand fallback
+S62. CSP blocks fetch to a required API endpoint
+     → error is surfaced, not silent
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+MANDATORY 9-PHASE PROCESS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+PHASE 1 — ARCHITECTURE MAPPING
+  Build a complete mental model before touching any code.
+  Map every module, every public function, every event-bus
+  channel, every localStorage key with its type and default,
+  every async flow with its in-flight guard (if any), every
+  shared mutable state with every reader and writer.
+  Identify every assumption Module A makes about Module B.
+  Identify every assumption that was true in version N-1
+  but might not be in version N (field added to a stored
+  record, event payload shape changed, etc.).
+
+PHASE 2 — STATIC ANALYSIS (file by file, line by line)
+  Read EVERY file completely. Apply the Deep Audit Checklist
+  to every line. Do NOT start fixing yet — catalogue
+  everything first. A fix applied before the full catalogue
+  is complete can mask a related bug or introduce a new one.
+  Group findings by root cause, not by symptom.
+
+PHASE 3 — INVARIANT VERIFICATION
+  For each of the 10 invariants defined above, find the
+  exact code that should enforce it. Verify it actually does.
+  If it doesn't, add a finding to the catalogue.
+
+PHASE 4 — DYNAMIC SIMULATION
+  Trace all 62 scenarios mentally. For each:
+  (a) Set up the exact starting state
+  (b) Walk the code path step by step
+  (c) Identify the exact line that breaks (if any)
+  (d) Classify the failure mode
+  (e) Note which existing or new findings explain it
+
+PHASE 5 — ROOT-CAUSE ATTRIBUTION
+  For every finding: is it a symptom or a root cause?
+  Group symptoms with their root cause. Prioritise by
+  the answer to: "What is the worst real-money outcome
+  if this bug is not fixed?" Sort:
+  CRITICAL = stranded funds or complete sell failure
+  HIGH     = silent wrong behavior or data corruption
+  MEDIUM   = recoverable error with degraded experience
+  LOW      = cosmetic / logging / minor
+
+PHASE 6 — IMPLEMENT FIXES
+  Fix root causes, not symptoms. For each fix:
+  • Paste the BEFORE code (exact, not paraphrased)
+  • Paste the AFTER code (exact)
+  • Add inline comment // FIX rNN: [why, not what]
+  • Apply the three gate questions from Rule R7
+  • If any gate answer is YES, trace and fix downstream
+
+PHASE 7 — REGRESSION VERIFICATION
+  Re-read every changed function completely.
+  Re-run all 62 simulation scenarios against the fixed code.
+  Explicitly ask for each fix: "Does this change the
+  behaviour of any code path I haven't explicitly
+  accounted for?" If yes, trace and fix.
+
+PHASE 8 — VERSION BUMP
+  Apply Rule R8 atomically. All 6 version strings updated
+  consistently. FIX LOG entry added at top of web-api.js
+  for every new fix in this pass.
+
+PHASE 9 — ELITE FINAL PASS
+  Apply Rule R9. This is not optional. Repeat from Phase 2
+  if new issues are found. Only stop when the answer to
+  "Would I find new bugs tomorrow?" is genuinely NO.
+  Document specifically, for each risk category, which fix
+  closed it — specific enough for another engineer to verify.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+REGRESSION INTRODUCTION TEST  (run after every single fix)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+After each individual fix, answer all three:
+
+  1. Does this change break any caller of the modified
+     function — including callers in other files, callers
+     via the event bus, and callers that run on page resume?
+
+  2. Does this change alter any event payload shape that
+     a downstream listener depends on? (adding or removing
+     a field on an emitted object can break any number of
+     silent consumers)
+
+  3. Does this change alter any value that will be
+     serialised to localStorage and later read back by a
+     resumed session? Old records must still deserialise
+     correctly; new records must produce correct defaults
+     when a field is absent.
+
+If any answer is YES → trace the full downstream impact
+and fix it before moving on to the next issue.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+REQUIRED OUTPUT FORMAT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+## 1. EXECUTIVE SUMMARY
+Project purpose · tech stack · file count · total lines ·
+risk level before fixes (1–10) · production-ready before
+fixes (yes/no + one-sentence reason per major risk)
+
+## 2. FULL ISSUE REPORT
+Sort: CRITICAL → HIGH → MEDIUM → LOW
+For each issue:
+  ID | Severity | File:line | Problem (one sentence) |
+  Root cause (mechanistic, not "there is a bug") |
+  Failure mode (what exactly fails: crash / silent wrong
+  result / stranded funds / stale UI / data corruption) |
+  Lens(es) triggered (Stranded Funds / Silent Failure /
+  Worst-Case Resume / Old Record / Concurrent Action) |
+  Invariant(s) violated (I1–I10, or none) |
+  Simulation scenarios that trigger it |
+  Fix applied (one sentence)
+
+## 3. ROOT CAUSE DEEP-DIVE
+For the top 5 most dangerous issues:
+  • Before code (exact, verbatim)
+  • Mechanistic explanation of why it fails
+    (not "this is wrong" but "variable X is Y because
+    of Z, causing W to evaluate to V, which is then
+    passed to function F as parameter P, where it
+    produces result R instead of the expected Q")
+  • Worst real-money outcome if not fixed
+  • Exact simulation scenario that triggers it
+  • After code (exact, verbatim)
+  • Downstream callers and event listeners verified
+  • Invariants now satisfied
+
+## 4. INVARIANT STATUS TABLE
+For each of I1–I10:
+  Invariant | Was it violated? | Which bug violated it? |
+  Which fix restored it? | Code reference confirming it
+
+## 5. FIXED CODEBASE
+Complete corrected project as downloadable ZIP.
+All version strings bumped consistently.
+All inline // FIX rNN comments present with WHY explanation.
+
+## 6. REGRESSION VERIFICATION TABLE
+For each fix:
+  Fix ID | Changed function | All callers verified |
+  Event payload shape unchanged (or: changed + listener
+  updated) | localStorage impact (none / field added with
+  default / field removed safely) | Gate test result
+  (clean / secondary fix applied: describe)
+
+## 7. WORKING FEATURES CHECKLIST
+✅ Launch (token creation, IPFS, on-chain create-tx)
+✅ Wallet generation (clamped count, correct storage)
+✅ Funding (batch SOL transfers, confirmed-count accurate)
+✅ Bundling (wallets pre-generated before launch)
+✅ Dev wallet management (balance live, key validated)
+✅ Unique buys (anti-repetition buffer never permanently saturates)
+✅ Unique sells (4-tier pct buffer, fallback registered)
+✅ Trigger sell (organic MC × multiplier, raw on-chain MC)
+✅ Percentage trigger sell ([0,100] clamped at all 5 entry points)
+✅ Targets system (floor locked, persisted, never released)
+✅ Reached-by logic (floor locked, trading continues)
+✅ Floor defense (buy pressure restored when MC below floor)
+✅ Trading every 5–10 sec, 24/7 (pacing engine steady from trade #1)
+✅ SOL recirculation (never runs dry, _safeRedistribute once per pass)
+✅ Returns all funds to dev wallet on trigger (9s confirm buffer)
+✅ Sweep confirmation buffer (sell proceeds present before sweep)
+✅ Non-bundle wallet resilience (knownWallets refreshed, organic clean)
+✅ Session resume (launchTime/id base, all fields restored)
+✅ UI stable (no stale state, correct toast order, live balance)
+✅ Mobile / PWA stable (sidebar, bottom nav, standalone mode)
+✅ SW cache versioning (returning users get fresh assets every pass)
+✅ Deployment ready (CSP correct, SRI correct, Vercel headers set)
+✅ Trading system runs until trigger hit (deadline does NOT halt it)
+✅ No phantom balances (confirmed-count accounting exact)
+✅ No memory leaks (chartData GC, _pollInflight cleaned, listeners removed)
+
+## 8. FILE STATUS REPORT
+For EVERY file in the project:
+✅ filename.ext — fully working, no glitches
+   Changed in this pass: [list every fix ID applied]
+   Unchanged: confirmed re-read, no issues found
+
+## 9. SIMULATION RESULTS
+For all 62 scenarios:
+S## | PASS / FAIL | If FAIL: exact line + failure mode + fix applied
+
+## 10. BEFORE vs AFTER
+BEFORE:
+  · What worked correctly
+  · What failed silently (no error, wrong result)
+  · What crashed with an error
+  · What could strand funds
+  · What was a security risk
+
+AFTER:
+  · What now works that didn't
+  · What was hardened against edge cases
+  · What can no longer strand funds (cite specific fix)
+  · What security risks are closed
+
+## 11. FINAL HONESTY CHECK
+State exactly ONE of:
+
+  A) "No further material issues remain. Evidence:"
+     Then list, for each risk category below, the specific
+     fix ID that closes it — specific enough for another
+     engineer to verify without running the code:
+       · exitPercentage clamping (all 5 paths)
+       · Trading loop permanence (deadline / stop / trigger)
+       · Stranded funds prevention (sweep, partial sell)
+       · Session resume correctness (all field paths)
+       · Concurrent execution safety (all in-progress guards)
+       · Anti-repetition buffer integrity (all paths)
+       · SOL recirculation correctness
+       · knownWallets / organic volume isolation
+       · Storage integrity (all array guards, namespace)
+       · Security (SRI, CSP, XSS, key handling)
+     This list must be complete and specific.
+
+  or
+
+  B) "Risks remain:" followed by an explicit list, each with:
+     severity · location · why it was not fixed
+
+  Do NOT write A unless the Elite Final Pass returned NO
+  new findings. Do NOT write vague reassurances.
+  Be specific. Be honest. Real money depends on it.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FILES TO ANALYZE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+<web-api.js>      — core engine, trading loop, RMM, sell
+<renderer.js>     — UI, event handlers, chart, state manager
+<sw.js>           — service worker, cache, heartbeat
+<index.html>      — HTML structure, CSP meta, SRI hashes
+<styles.css>      — layout, components, responsive rules
+<mobile.css>      — mobile overrides, touch targets
+<vercel.json>     — deployment config, response headers, CSP
+<manifest.json>   — PWA manifest
+<package.json>    — project metadata, version record
+<README.md>       — documentation (cross-check claims)
+<and every other file in the project>
+
+Start analysis now.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+You are a senior software engineer performing a full audit of this Solana token launch and market-making application. Read every file completely before writing a single line of output.
+
+CODEBASE FILES
+web-api.js    — core engine: trading loop, RMM, sell-all, session resume
+renderer.js   — UI, event handlers, chart, state manager
+sw.js         — service worker, cache, heartbeat
+index.html    — HTML structure, CSP meta, SRI hash
+styles.css    — layout, components, responsive rules
+mobile.css    — mobile overrides, touch targets
+vercel.json   — deployment config, response headers, CSP
+manifest.json — PWA manifest
+package.json  — project metadata, version record
+README.md     — documentation
+
+─────────────────────────────────────────────────────────────
+SYSTEMS THAT MUST WORK CORRECTLY
+─────────────────────────────────────────────────────────────
+1. Launch — IPFS upload, on-chain token create, dev buy
+2. Wallet management — generate, fund, export, display
+3. Bundle funding — SOL distribution to cluster wallets
+4. Trading loop — buys and sells every 5-10 seconds, 24/7
+5. SOL recirculation — trading never stops from fund exhaustion
+6. Trigger system — organic MC multiplier fires sell-all
+7. Sell-all — all wallets sold, SOL swept to dev wallet
+8. Targets + floor — MC floor locked once target hit, never released
+9. Session resume — all engines restart correctly on page reload
+10. UI — live stats, chart, toasts, mobile nav, correct state
+
+─────────────────────────────────────────────────────────────
+HARD INVARIANTS — violations are critical bugs
+─────────────────────────────────────────────────────────────
+I1.  Trading only stops when trigger fires or user clicks Sell Now.
+     Deadline expiry does NOT stop trading.
+I2.  Every buy and sell uses unique params (amount, fee, slippage).
+I3.  SOL is always recirculated; wallets never permanently run dry.
+I4.  Once "Reached By" deadline passes and target MC is hit,
+     the MC floor is locked and never released.
+I5.  Non-bundle wallet activity cannot break floor or target logic.
+I6.  exitPercentage is always clamped to [0, 100] at every entry point.
+I7.  executeSellAll never runs concurrently for the same mint.
+I8.  No funds are ever stranded — sweep runs after sells confirm.
+I9.  Session resume restores correct elapsed time (not Date.now()).
+I10. No phantom balances — confirmed counts match actual transfers.
+
+─────────────────────────────────────────────────────────────
+AUDIT CHECKLIST — check every item in every file
+─────────────────────────────────────────────────────────────
+Code quality
+  - Syntax errors, ReferenceErrors, TypeErrors
+  - Variables declared inside try{} but used outside (block scope)
+  - Code accidentally embedded inside // comments (e.g. using \n escapes)
+  - Missing null/undefined guards on DOM elements and API responses
+  - Unguarded await without .catch() on fire-and-forget calls
+  - Duplicate var/let declarations in same scope
+
+Async and concurrency
+  - In-flight guards for polling functions (prevent duplicate concurrent calls)
+  - Race conditions between trading loop and sell-all
+  - Correct use of ?? vs || (0 must not fall through to default)
+  - Promise leaks, unhandled rejections
+
+Trading logic
+  - Anti-repetition buffers sized correctly for their hash space
+  - pct values clamped before reaching pumpportal API
+  - Sell proceeds confirmed on-chain before sweep begins
+  - Correct timestamp used for deadline (launchTime, not Date.now())
+
+Storage and state
+  - let/const block scope — declarations visible where used
+  - Blob URLs stripped on session resume (invalid after page reload)
+  - baseMC, mcFloor, allTargetsHit persisted and restored
+  - solPerWallet persisted and preferred over BudgetLedger on resume
+
+Security
+  - SRI hash correct for @solana/web3.js CDN script
+  - CSP connect-src includes all RPC endpoints (https + wss)
+  - CSP img-src includes IPFS gateways
+  - Private keys never logged or transmitted outside Solana RPC
+  - HTML injection prevented via esc() on all user-controlled values
+
+Performance
+  - O(n) algorithms used where O(n²) would degrade at scale
+  - setInterval callbacks do not stack concurrent async calls
+  - localStorage read count minimized per call site
+
+UI
+  - Buttons always re-enabled in finally{} after async operations
+  - Card rebuild only when status actually changes
+  - CSS.escape() on mint addresses in querySelector attribute selectors
+  - All event listeners attached exactly once
+
+─────────────────────────────────────────────────────────────
+PROCESS
+─────────────────────────────────────────────────────────────
+1. Read all files completely.
+2. For each issue found: state severity, file:line, root cause,
+   failure mode (crash / silent wrong result / stranded funds /
+   stale UI / data corruption), and the exact fix applied.
+3. After fixing, ask: "Would I find new bugs if given this prompt
+   again?" If yes, keep fixing. Stop only when the answer is no.
+4. Check that each fix does not introduce new issues (callers,
+   event payload shapes, localStorage fields).
+
+─────────────────────────────────────────────────────────────
+OUTPUT FORMAT
+─────────────────────────────────────────────────────────────
+## 1. ISSUES FOUND
+Sort: CRITICAL → HIGH → MEDIUM → LOW
+Each entry: ID | Severity | File:line | Problem | Root cause |
+Failure mode | Invariant violated | Fix applied
+
+## 2. ROOT CAUSE DEEP-DIVE
+For the top 3-5 issues: exact before/after code, mechanistic
+explanation of why it fails, worst real-money outcome if unfixed.
+
+## 3. FIXED CODEBASE
+Complete corrected zip. Every changed line has a // FIX rNN comment.
+All version strings bumped consistently.
+
+## 4. WHAT WORKS / WHAT DIDN'T (before vs after)
+One clear table: feature | worked before | works after | fix ID
+
+## 5. WORKING FEATURES CHECKLIST
+✅ launch  ✅ wallet management  ✅ funding  ✅ bundling
+✅ trading loop 24/7  ✅ unique buys and sells
+✅ SOL recirculation  ✅ trigger sell  ✅ percentage trigger
+✅ targets and floor lock  ✅ reached-by logic
+✅ return to dev wallet  ✅ session resume  ✅ UI stable
+✅ mobile/PWA  ✅ service worker  ✅ deployment ready
+
+## 6. FILE STATUS
+✅ filename.ext — fully working | fixes applied: [IDs] | unchanged: confirmed
+
+## 7. FINAL HONESTY CHECK
+State exactly one of:
+  A) "No further material issues remain." — then cite the specific
+     fix ID that closes each risk category (stranded funds, trigger,
+     resume, concurrency, buffers, SOL recirculation, security).
+  B) "Risks remain:" — list each with severity, location, and why
+     it was not fixed.
+Do not write A unless the self-review returned zero new findings.
+Real money depends on this being accurate.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SOLANA ASSET STUDIO — ULTRA DEEP PRODUCTION AUDIT  v70
+Real SOL is at risk. There are no shortcuts. Begin.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+═══════════════════════════════════════════════════════════════
+WHO YOU ARE
+═══════════════════════════════════════════════════════════════
+
+You are simultaneously all six of these engineers, with no
+hierarchy — every lens is applied to every line:
+
+  1. SOLANA PROTOCOL ENGINEER — you know how pump.fun and
+     pumpportal.fun behave under real network conditions:
+     confirmation lag, getBalance response shape variance
+     ({value:N} vs N), transaction finality timing, base fee
+     spikes, VersionedTransaction vs legacy fallback, and
+     pumpportal API quirks (% strings, denominatedInSol,
+     pool field requirements).
+
+  2. FINANCIAL SYSTEMS AUDITOR — every SOL amount is real
+     money. You think in stranded funds, double-spends,
+     phantom balances, incorrect fee accounting, and the
+     worst-case capital loss path for every code branch.
+
+  3. BLACK-HAT PENETRATION TESTER — you probe every data
+     boundary: localStorage injection, XSS via untrusted
+     token metadata, CSP bypass, SRI hash correctness,
+     private-key exposure paths, and unsafe clipboard usage.
+
+  4. CONCURRENCY SPECIALIST — you map every async flow,
+     every event-bus channel name (typos are invisible bugs),
+     every shared-state mutation, and every in-flight guard.
+     You know that a guard set AFTER the first await is no
+     guard at all.
+
+  5. QA LEAD WHO HAS SEEN THIS EXACT CODE FAIL — you have
+     traced every scenario in the simulation list and you
+     know which ones are traps. You also know that bugs
+     that have been fixed once tend to reappear in adjacent
+     code (same pattern, different line).
+
+  6. PRODUCTION INCIDENT RESPONDER — the most dangerous bug
+     is the one that produces no error: a sell that sends
+     '0%', a sweep that confirms but returns nothing, an
+     organic trigger that fires twice. You have been paged
+     at 3 a.m. for all of these.
+
+═══════════════════════════════════════════════════════════════
+STEP 0  (MANDATORY BEFORE ANYTHING ELSE)  READ THE FIX HISTORY
+═══════════════════════════════════════════════════════════════
+
+Before writing a single word of analysis, read the ENTIRE
+multi-thousand-line FIX LOG comment block at the top of
+web-api.js from the very first line to where 'use strict'
+appears. This is not optional.
+
+The fix log exists because this project has had 69+ rounds
+of bug fixes. Each fix was caused by a real class of bug.
+Reading the full history tells you:
+
+  • Which bug classes have appeared MORE THAN ONCE — those
+    are the patterns to hunt hardest for, because they keep
+    coming back in adjacent code.
+
+  • Which fixes were themselves regressed by subsequent
+    passes — particularly the "code-in-comment" regression
+    class (r68-1, r68-2) where a fix was accidentally
+    written as a // comment using \n escape sequences,
+    making it dead code. Look for this EVERYWHERE.
+
+  • Which fields in deployment records were added in which
+    revision — essential for knowing which fields may be
+    absent in old records and which reads need defaults.
+
+  • Which function was fixed in one code path but the SAME
+    root cause remained in a sister code path — the fix
+    log explicitly calls these out with "was missed in that
+    pass" language.
+
+After reading the fix log, ask yourself:
+  "Does any fix in this history have a SIBLING CODE PATH
+   that was documented as fixed but might still contain the
+   same root cause?"
+   
+If yes — find it, verify it, fix it.
+
+═══════════════════════════════════════════════════════════════
+ABSOLUTE NON-NEGOTIABLE RULES
+═══════════════════════════════════════════════════════════════
+
+R1.  Read EVERY file. No file is too short to skip. Wrong
+     CSP in vercel.json silently blocks Web3.js. Wrong SRI
+     hash in index.html kills every transaction on page load.
+     These cost real money. Every. File. Every. Line.
+
+R2.  Trace EVERY async boundary. Every `await`, every `.then()`,
+     every `setInterval`, every `setTimeout`, every event-bus
+     `emit` and every listener registered with `on()`. Map
+     the full call graph. Find every Promise created but never
+     caught. A setInterval callback that is async and has no
+     .catch() silently discards every rejection.
+
+R3.  Follow EVERY data path that touches SOL amounts or
+     percentages end-to-end: UI input → parseInt/parseFloat →
+     isNaN guard → clamp → record write → localStorage →
+     read on resume → trade function → API string. One missing
+     clamp at any step is a stranded-funds or 0%-sell scenario.
+
+R4.  Check EVERY `||` vs `??` decision on numeric fields.
+     `0` is a valid value for exitPercentage, autoSellMultiplier,
+     targetDeadlineMs, and clusterSize. `||` coerces 0 to the
+     default silently; `??` only falls back on null/undefined.
+     This single operator error has appeared six times in this
+     codebase and will appear again.
+
+R5.  Check EVERY `try { const x = ... }` block. JavaScript
+     `const` and `let` are block-scoped to the enclosing `{}`.
+     A variable declared inside a `try {}` block cannot be seen
+     outside it. This is the `_allDeps` / `_validInBatch` class
+     of critical bug that has caused complete session resume
+     failure and silent wallet-skip in funding loops.
+
+R6.  Check for CODE ACCIDENTALLY IN COMMENTS. A line like:
+       // Fixed description.\n    actualCode: value,
+     where the `\n` is a LITERAL two-character escape sequence
+     (not a real newline) means everything after the `//` on
+     that line — INCLUDING the actual code — is treated as a
+     comment and is DEAD. This is the r68-1/r68-2 class of
+     critical regression. Scan every single-line `//` comment
+     that contains a `\n` escape character anywhere on that
+     line. If you find code after it, extract it.
+
+R7.  Check EVERY function defined in multiple call-path contexts.
+     If a fix was applied to an auto-trigger call path but the
+     manual "Sell Now" call path was missed (or vice versa),
+     that is an open vulnerability on every untouched path.
+     Search for the pattern, not the single instance.
+
+R8.  Every fix must pass three gate questions BEFORE it is
+     committed:
+       (a) Does it break any caller of the modified function?
+           Including callers in other files, via the event bus,
+           and on page resume.
+       (b) Does it alter any event payload field that a
+           downstream listener depends on? Removing or renaming
+           a field silently breaks every listener.
+       (c) Does it alter any value serialised to localStorage?
+           Old records must still deserialise correctly. New
+           fields must have safe defaults when absent.
+     If any answer is YES, trace and fix FULLY before moving on.
+
+R9.  Check BOTH engine-version emit sites. The engine badge
+     string and features array are emitted in TWO places:
+       (1) The boot() function (~100ms after DOMContentLoaded)
+       (2) Inside _launchTokenReal() after launch completes
+     Both must contain the same version string and a consistent,
+     up-to-date features array. If (2) was last updated several
+     revisions ago and (1) is current, (2) will overwrite the
+     badge tooltip with stale data after every launch.
+
+R10. Version strings are not cosmetic. EVERY pass must bump
+     ALL SIX consistently and atomically:
+       □ sw.js  CACHE_VERSION        (forces cache eviction)
+       □ package.json  version        (semantic record)
+       □ renderer.js  FORM_VERSION    (triggers StateManager)
+       □ web-api.js boot engine-version badge string
+       □ web-api.js _launchTokenReal engine-version badge string
+       □ features[] array in BOTH badge emits
+       □ FIX LOG comment block added at top of web-api.js
+     Mismatched versions are a production bug. Returning users
+     silently get stale cached code that contradicts the new logic.
+
+R11. The Elite Final Pass is mandatory, not optional. Before
+     delivering any output, ask this exact question:
+       "If I received this project fresh tomorrow with no
+        prior context and ran this same audit, would I find
+        any new bugs?"
+     If YES → return to analysis and fix. If NO → explain
+     specifically and verifiably why each risk category is closed.
+
+R12. After EVERY individual fix, ask:
+       "Did this fix introduce any new bug or side effect?"
+     Trace every downstream caller, every event listener,
+     every localStorage resume path. If the answer is yes,
+     fix that too. Continue until genuinely no.
+
+═══════════════════════════════════════════════════════════════
+BUG PATTERN LIBRARY  (classes that have recurred in this code)
+═══════════════════════════════════════════════════════════════
+
+These patterns have appeared MULTIPLE TIMES across the 69+
+fix rounds. Hunt for ALL instances of each, not just one.
+
+PATTERN A — OPERATOR COERCION  (|| vs ??)
+  `expr || default` when expr can be 0 and 0 is a valid value.
+  Seen in: exitPercentage (×4), autoSellMultiplier (×2),
+  solPerWallet (×1), fundBundleWallets (×1).
+  Search: every `|| 100`, `|| 0.01`, `|| 20`, `|| 0.5`,
+          `|| 24`, `|| 7500` in function parameters and
+          record field writes.
+
+PATTERN B — BLOCK-SCOPE TRAP  (try {} const)
+  `const x` or `let x` declared inside `try {}` but
+  referenced after the closing `}`.
+  Seen in: `_allDeps` (r61-1, crashed all session resumes),
+           `_validInBatch` (r51-1, crashed wallet funding).
+  Search: every `try {` block — look at every identifier
+          declared inside and check if it is used outside.
+
+PATTERN C — CODE-IN-COMMENT  (// text \n actualCode)
+  A fix written as a single-line comment using the literal
+  two-character sequence `\n` instead of a real newline.
+  Every character after `//` on that line is a comment,
+  including the intended fix code.
+  Seen in: r68-1 (startTs: property never set → NaN elapsed),
+           r68-2 (_sweepAttempted never declared → ReferenceError).
+  Search: every `//` comment line — does it contain a
+          LITERAL `\n` escape sequence? If so, is there
+          meaningful code after it? Extract and restore.
+
+PATTERN D — MISSED SISTER PATH  (fix in one path, not all)
+  A root cause exists identically in multiple code paths but
+  only one is fixed. The unfixed sister path silently fails.
+  Seen in: exitPercentage clamp (UI fixed, auto-trigger missed),
+           launchTime||id (TradingEngine fixed, RMM missed),
+           swept flag (!!devKey in emit vs actual sweep result),
+           onAutoSellComplete cache-clear (done), but
+           onAutoSellFailed cache-clear (missed until r69-1).
+  Search: every fix that says "this was missed in that pass" —
+          verify the sister path is actually fixed now.
+
+PATTERN E — UNREGISTERED FALLBACK  (anti-repetition buffer bypass)
+  When the primary selection loop exhausts its attempts and
+  falls through to a fallback, the fallback value must be
+  REGISTERED in the buffer. If it is not, two consecutive
+  fallback calls can produce identical parameters — defeating
+  the entire anti-repetition guarantee.
+  Seen in: _tradeParams (r44-2), _uniqueBuyPct (r53-1),
+           _uniqueSellPct (r53-1).
+  Search: every function with a "safety fallback" comment
+          that generates random values — does it push to
+          the buffer before returning?
+
+PATTERN F — STALE-WINDOW BUFFER SATURATION
+  An anti-repetition buffer window larger than the hash space
+  saturates after N unique values and forces EVERY subsequent
+  call to the fallback. The fallback produces repeating patterns.
+  Window > hash space = permanently broken uniqueness guarantee.
+  Seen in: _recentDelayBuckets (window 40 → 4), _recentBuyPctBuckets
+           (window 25 → 6), _recentSellPctBuckets (window 25 → 10),
+           _recentParamHashes (window 60 → 40).
+  Search: every circular buffer — compute its hash space and
+          verify window < hash space by at least a small margin.
+
+PATTERN G — MISSING NULL GUARD ON EVENT PAYLOAD
+  An event handler receives `d` from the bus and accesses
+  `d.field` without first checking `if (!d) return`.
+  Seen in: onAutoSellComplete (r66-2), onSolSwept (r64-1),
+           onOrganicMcUpdate (r11-4).
+  Search: every `window.electronAPI?.onXxx?.(d => {` —
+          does it start with `if (!d) return`? Or at minimum
+          `if (!d?.field) return`?
+
+PATTERN H — MISSING .catch() ON ASYNC FIRE-AND-FORGET
+  An async function called without `await` and without `.catch()`.
+  setInterval with an async callback — the returned Promise is
+  discarded silently; rejections produce no error.
+  Seen in: _startPricePolling (r21-1), pollTokenData interval
+           (r45-1), updateTokensBadge at multiple call sites.
+  Search: every `setInterval(async`, every non-awaited call to
+          an async function — does it have `.catch(console.warn)`?
+
+PATTERN I — CONNECTION OBJECT STALE AFTER ENDPOINT ROTATION
+  A single `const conn = _getConnection()` captured at function
+  entry becomes stale if `_rpcIdx` rotates during the operation.
+  Subsequent batches use the old endpoint's Connection object.
+  Seen in: _fundWalletsReal (r25-2), _redistribute (r26-8).
+  Search: any function that makes multiple batched RPC calls and
+          captures a connection ONCE before the batch loop —
+          it must call `_getConnection()` at each attempt.
+
+PATTERN J — BLOB URL NOT STRIPPED ON RESUME
+  `blob:` URLs stored in logoPath/bannerPath become invalid
+  after page reload. On resume they appear truthy (non-empty
+  string) but produce 404/failed requests.
+  Seen in: _resumeActive (r48-4).
+  Search: every place a deployment record is read on resume —
+          are blob: URLs checked and cleared?
+
+PATTERN K — DOUBLE-NAMESPACE STORAGE KEY  (sas:sas:key)
+  `_storageSet('lastSeen', ...)` correctly produces key `sas:lastSeen`.
+  But `localStorage.setItem('sas:lastSeen', ...)` also produces
+  `sas:lastSeen`. If both are used for the SAME key, they stay
+  consistent. But `_storageSet('sas:lastSeen', ...)` would produce
+  `sas:sas:lastSeen` — a permanently orphaned key that is never read.
+  Seen in: boot() `_storageSet('lastSeen', ...)` vs old bug.
+  Search: any call to `_storageSet` or `_storageGet` where the
+          key argument already starts with `sas:`.
+
+PATTERN L — VERSION DRIFT BETWEEN DUAL EMIT SITES
+  The engine-version badge is emitted in TWO places. When only
+  one is updated, the other overwrites it with stale data.
+  Seen in: _launchTokenReal emit (r69-3 — features frozen at r64).
+  Search: find BOTH emit('engine-version', ...) calls and verify
+          they use the same version string and a consistent features[].
+
+PATTERN M — INCOMPLETE CACHE INVALIDATION ON STATE CHANGE
+  When a deployment record status changes in localStorage (e.g.,
+  from 'selling' back to 'active' after a failed sell), the
+  renderer's _launchesCache must be invalidated AND refreshTokensView()
+  must be called so the UI reflects the new state.
+  Not doing this leaves cards stuck in the wrong state for up to
+  the TTL (20 seconds).
+  Seen in: onAutoSellFailed missing cache invalidation (r69-1).
+  Search: every code path that changes deployment record status —
+          does the corresponding renderer event handler invalidate
+          _launchesCache and call refreshTokensView()?
+
+═══════════════════════════════════════════════════════════════
+HARD INVARIANTS  (prove each holds after every fix)
+═══════════════════════════════════════════════════════════════
+
+These are non-negotiable behavioral contracts. A violation is
+a critical bug regardless of how unlikely the trigger seems.
+
+I1.  exitPercentage ∈ [0, 100] at EVERY point in the pipeline:
+     UI parse → record write → executeSellAll → _executeSellReal
+     → RMM auto-trigger path → _execSell → _executeSellReal.
+     All FIVE locations must independently clamp. A pre-r57 stored
+     record with exitPercentage=-5 passes the isNaN check (-5 is
+     not NaN) and must be caught by the clamp, not let through.
+
+I2.  The TradingEngine loop only exits when:
+     (a) TradingEngine.stop(mint) is called, OR
+     (b) TradingEngine.fireTrigger(mint) is called.
+     Deadline expiry MUST NOT stop it. Redistribution failure
+     MUST NOT stop it. Recirculation error MUST NOT stop it.
+     Any transient RPC error MUST NOT stop it.
+
+I3.  executeSellAll(mint) is idempotent regarding concurrency:
+     calling it twice simultaneously for the same mint must
+     produce exactly one sell pass, one sweep, one completion
+     event, one localStorage write. _sellInProgress Set enforces
+     this — the guard must be checked BEFORE TradingEngine.stop().
+
+I4.  Deployment record status follows exactly one forward path:
+     active → selling → completed.
+     The ONLY valid reverse transition is: selling → active on a
+     cold page reload when sell was interrupted (r34-8).
+     There must be no other way to go backwards.
+
+I5.  state.mc in RMM is always ≥ state.mcFloor when allTargetsHit
+     is true. `state.mc = Math.max(td.mc, state.mcFloor)` must
+     hold in EVERY code path that updates state.mc. The floor
+     is locked and never released for the lifetime of the session.
+
+I6.  knownWallets contains the dev wallet address AND all current
+     bundle wallet addresses. No trade from these addresses may
+     be counted as organic buy volume. knownWallets is rebuilt
+     every 30 ticks to catch mid-session wallet regeneration.
+
+I7.  The SOL sweep fires AFTER a 9-second confirmation buffer,
+     not immediately after sell submission. This ensures sell
+     proceeds are confirmed on-chain before getBalance is called.
+     Removing or shortening this buffer strands sell proceeds.
+
+I8.  Every anti-repetition buffer has window < hash space:
+     _recentParamHashes: window=40, space=45 ✓
+     _recentBuyPctBuckets: window=6, space=8 ✓
+     _recentSellPctBuckets: window=10, space=12 ✓
+     _recentDelayBuckets: window=4, space≈5+ ✓
+     Every fallback path MUST register its output in the buffer.
+
+I9.  Every event-bus listener attached within a TradingEngine
+     session (e.g., 'mc-pace') is removed in a try/finally block
+     when the session ends — whether it ends normally, via trigger,
+     via error, or via stop(). Unremoved listeners accumulate across
+     restarts, causing _buyBias to spike to the cap immediately.
+
+I10. _absoluteDeadline and state.startTs are always computed from
+     `params.launchTime || params.id || Date.now()` — never from
+     `Date.now()` alone on a resumed session. Using Date.now() on
+     resume silently restarts the deadline clock, making the system
+     trade 24+ extra hours and reporting wrong urgency/pace.
+
+I11. The `swept` field in the `auto-sell-complete` event payload
+     reflects whether the sweep ACTUALLY RAN (devKP was parsed
+     successfully AND the sweep loop executed), NOT merely whether
+     devKey was a non-empty string. A truthy but unparseable devKey
+     skips the entire sweep block; `swept` must be false in that case.
+
+I12. After executeSellAll FAILS (catch path), the deployment record
+     status must be restored to 'active' AND the renderer's
+     _launchesCache must be immediately invalidated AND refreshTokensView()
+     must be called. All three steps must occur together, or the
+     token card stays stuck showing "SELLING…" with Sell Now disabled.
+
+═══════════════════════════════════════════════════════════════
+COMPLETE AUDIT CHECKLIST  (every item, every file)
+═══════════════════════════════════════════════════════════════
+
+NUMERIC CORRECTNESS
+  □ Every || vs ?? on fields where 0 is a valid input (I1 above)
+  □ Every parseInt — does it have radix 10? Does result get isNaN guard?
+    Does result get clamped? Can it produce NaN silently?
+  □ Every parseFloat — same questions.
+  □ Every percentage computation: / 100 or × 100? Denominator zero-guarded?
+  □ Every SOL ↔ lamport conversion — × 1e9 or / 1e9, never applied twice,
+    never reversed. getBalance returns lamports; always / 1e9.
+  □ Every toFixed(N) — produces a string; will it be parsed back numerically
+    by a caller that expects a number?
+  □ Every getBalance response extraction — handles BOTH `{value: N}` AND
+    bare `N` formats (RPC node variance). One pattern: 
+    `(res && typeof res.value === 'number' ? res.value : (typeof res === 'number' ? res : 0)) / 1e9`
+  □ Every Math.max/min call with NaN — `Math.max(NaN, 5) = NaN`, not 5.
+  □ Every floating-point comparison on financial values — use lamports
+    (integers) for threshold comparisons, not SOL (floats).
+
+ASYNC AND CONCURRENCY
+  □ Every in-flight guard set BEFORE the first `await` in the function,
+    not after it. A guard set after creates a race window.
+  □ Every `setInterval(async fn, ms)` — the returned Promise is discarded.
+    Does `fn` have internal .catch? Is the call wrapped with .catch()?
+  □ Every async function called fire-and-forget — does it have .catch()?
+  □ Every event-bus `on()` listener added inside a session — is there a
+    corresponding `off()` in a try/finally block?
+  □ Every retry loop — exponential backoff present? Max retries enforced?
+    Could it loop indefinitely under any condition?
+  □ Every Promise.allSettled — are rejected results explicitly handled,
+    or silently swallowed?
+  □ Every `setTimeout` ID — stored and cleared when no longer needed?
+  □ Every shared mutable state read across an `await` — could another
+    concurrent caller mutate it between the read and the write?
+
+SCOPE AND LIFETIME
+  □ Every `try { const/let x = ... }` — is `x` referenced after `}`?
+    (PATTERN B — the most invisible and most catastrophic)
+  □ Every closure variable captured by a callback — is it the correct
+    value or a mutable reference that will change by the time the
+    callback runs?
+  □ Every module-level mutable variable — is it reset between sessions?
+    Could a stale value from a previous launch pollute a new one?
+  □ Every event listener added in an init() function — is there a guard
+    to prevent adding it twice if init() is called again?
+  □ Every Set, Map, or Array that accumulates per-mint or per-session
+    data — is it bounded? Is it cleaned up when the session ends?
+
+COMMENT vs CODE DETECTION
+  □ Scan every `//` comment line in web-api.js and renderer.js.
+    Does any of them contain a literal `\n` (backslash-n) two-character
+    sequence? If yes: everything after the `//` on that line is a comment,
+    including any code-like text after the `\n`. Extract it, verify it was
+    intended as real code, and restore it outside the comment. (PATTERN C)
+  □ Pay special attention to recent FIX LOG entries — did the LATEST pass
+    have any comment-embedded code that is supposed to be a property
+    assignment, function declaration, or variable declaration?
+
+DATA INTEGRITY AND PERSISTENCE
+  □ Every `_storageGet()` that is expected to return an array — does it
+    have an `Array.isArray()` guard? JSON.parse of corrupt data can return
+    a plain object or string with no .forEach method.
+  □ Every field written to a deployment record — is there a corresponding
+    read on resume? Orphaned writes are dead code; missed reads are
+    undefined-on-resume bugs.
+  □ Every field READ from a deployment record on resume — does it have a
+    sane default for records created before that field was added?
+    (PATTERN D / the Old-Record Lens)
+  □ Every `_storageSet` key argument — does it already start with `sas:`?
+    If so, the stored key would be `sas:sas:key` — permanently orphaned.
+    (PATTERN K)
+  □ Every blob: URL stored in a record — is it stripped on resume?
+    (PATTERN J)
+  □ The _launchesCache invalidation pattern: EVERY code path that changes
+    a deployment record's status must be followed by:
+      _launchesFetchId++; _launchesCache = null; _launchesInflight = null;
+      refreshTokensView().catch(console.warn);
+    Check: onAutoSellComplete ✓, onSolSwept ✓, onAutoSellTriggered ✓,
+    onAutoSellFailed (check current code), any others?
+
+SECURITY
+  □ Every innerHTML / insertAdjacentHTML — are ALL user-controlled values
+    passed through `esc()`? Including token name, symbol, description,
+    social links, and mint address in template literals.
+  □ Every querySelector with data-mint attribute — `CSS.escape()` applied
+    to the mint string? A mint with `"` or `'` breaks the selector.
+  □ Every external URL opened via openExternal — is it validated?
+  □ CSP in vercel.json and index.html — do they match exactly? Are all
+    of these present: blob: in connect-src and img-src, all RPC https://
+    AND wss:// endpoints, all IPFS gateways, DexScreener, pumpportal?
+  □ SRI hash on @solana/web3.js CDN script — correct sha384 for the
+    EXACT version and filename being served? Wrong hash = all transactions
+    fail silently (window.solanaWeb3 is never set).
+  □ Private key — never appears in console.log, error.message, event
+    payload, or URL parameter. Validated BEFORE storage.
+  □ navigator.clipboard usage — guarded with typeof check AND has
+    execCommand fallback for non-HTTPS/unsupported environments?
+
+SOLANA / BLOCKCHAIN SPECIFIC
+  □ Every getBalance extraction — handles both `{value: lamports}` and
+    bare `lamports` formats from different RPC nodes.
+  □ Every sendTransaction — are sell proceeds confirmed before sweep?
+    (9s buffer — not 6s. r53-2 raised it. Do not reduce it.)
+  □ Every transaction signing — VersionedTransaction first, fallback to
+    legacy. Both paths must sign correctly.
+  □ Every RPC call inside a multi-batch function — does it refresh the
+    connection via `_getConnection()` at each batch attempt, or use a
+    single stale connection captured before the loop?
+  □ Every priority fee computation — is it high enough to clear the
+    validator queue under congestion? Too low = transaction drops.
+  □ Every transaction batch size — within Solana's 1232-byte limit?
+    7 wallets per batch for funding; 10 for sweep.
+
+PERFORMANCE AND SCALABILITY
+  □ Every wallet-loop inside another wallet-loop — O(N) or O(N²)?
+    At 5000 wallets, O(N²) = 25 million iterations per cycle.
+  □ Every Array.find() inside a forEach or map — O(N²). Replace with
+    a pre-built Map for O(1) lookups. (_walletMap pattern, r42-1)
+  □ Every getLaunches() call — does it go through _getCachedLaunches(),
+    or does it bypass the cache and fire a fresh read?
+  □ Every _safeRedistribute() call — is it guarded by a per-cycle flag
+    that prevents it from being called N times for N low-balance wallets?
+    (_redistributedThisPass flag, r12-1)
+  □ Every _pollInflight / _pollInflightRmm entry — cleared with `delete`
+    (removes key, O(1) lookup stays fast) not `= false` (accumulates
+    dead keys forever)?
+  □ Event listeners with { passive: true } on scroll/touch handlers?
+
+UI AND STATE SYNC
+  □ Toast messages emitted in the correct semantic order. The sequence
+    in executeSellAll is: sells → 9s wait → sweep → sol-swept event →
+    auto-sell-complete event. The renderer MUST show sweep toast BEFORE
+    completion toast. Check the emission order, then the handler order.
+  □ Card status after failed sell: must revert to LIVE within one poll
+    cycle (≤ the cache TTL, not ≤ 20s). Requires cache invalidation.
+  □ Card status after successful sell: must show EXITED immediately.
+  □ Card rebuild only when status ACTUALLY changes — not on every poll.
+    Unnecessary card rebuilds reset chart state and scroll position.
+  □ Engine version badge: populated at boot (100ms defer), AND correct
+    after a launch (both emit sites consistent).
+  □ Wallet balance sidebar: refreshed after sweep, after Settings save,
+    and on a 60s interval. Not only at boot.
+  □ All buttons (generate, fund, launch, sell now) re-enabled in finally{},
+    not only in success and explicit error paths.
+
+SERVICE WORKER
+  □ CACHE_VERSION bumped — returning users get fresh assets, not r67 code.
+  □ All known SW message types handled in the client listener
+    (SW_HEARTBEAT, SW_SYNC_SAVE_STATE, SW_PERIODIC_TICK, SIM_CATCHUP_RESPONSE).
+  □ SW fetch handler guarded against special-scheme URLs (chrome-extension://,
+    about:, data:) — `new URL(e.request.url)` throws on these.
+  □ SW heartbeat interval stopped when _swSessions is empty.
+  □ Navigation fallback returns 503 when index.html is not yet cached —
+    not undefined (respondWith(undefined) = net::ERR_FAILED).
+
+DEPLOYMENT AND CONFIG
+  □ vercel.json CSP ≡ index.html meta CSP (must match exactly).
+  □ Both CSPs include: blob: connect-src, all RPC endpoints https + wss,
+    pump.fun + frontend-api.pump.fun, pumpportal.fun, DexScreener,
+    IPFS gateways (ipfs.io, cf-ipfs.com, cloudflare-ipfs.com, nftstorage.link),
+    Jupiter (api.jup.ag), CoinGecko (api.coingecko.com), Binance (api.binance.com).
+  □ sw.js served with no-cache, no-store, must-revalidate Cache-Control.
+  □ Service-Worker-Allowed: / header present for sw.js.
+  □ All 6 version strings consistent (Rule R10).
+
+═══════════════════════════════════════════════════════════════
+SYSTEMS THAT MUST WORK  (zero-tolerance)
+═══════════════════════════════════════════════════════════════
+
+CAPITAL FLOWS
+  · Launch buy: correct SOL amount, correct mint address, authority
+    revocations applied, BudgetLedger.recordSpend() called.
+  · Bundle funding: correct per-wallet amount, correct batch count,
+    confirmed count matches actual funded wallets (not intended).
+  · SOL recirculation: recirculateSol() sells holders → SOL stays in
+    bundle wallets → _safeRedistribute tops up from dev wallet.
+  · Sweep: 9s confirmation buffer → all bundle wallets → fee floor
+    20000 lamports → remainder transferred to dev → sol-swept emitted.
+  · Budget: BudgetLedger spend tracked correctly, no phantom spend,
+    no over-spend, no zero-total on cold resume.
+
+TRADING ENGINE
+  · Every buy uniquely parameterised: amount (5–79% of balance),
+    slippage (5-50%), fee tier (0-4), timing (5-10s jittered).
+  · Every sell uniquely parameterised: pct (12-100%), same fee/slip.
+  · Anti-repetition: all four buffers window < hash space; fallbacks
+    register; no buffer permanently saturates.
+  · Pacing: nominalDelay pre-calculated so targets hit at steady rate
+    from trade #1; remaining-time÷remaining-trades formula correct.
+  · Trading: 24/7, every 5-10s, only stops on trigger or stop().
+  · Deadline: expiry does NOT stop trading (MUST NOT). It zeroes
+    _absoluteDeadline so _tradeDelay() switches to no-deadline mode.
+  · Recirculation: fires every 8 cycles; respects triggerFired flag;
+    _safeRedistribute called at most once per cycle.
+
+TRIGGER AND SELL
+  · Organic trigger: uses raw on-chain td.mc (not floor-clamped state.mc)
+    for organicMC calculation. Uses `??` (not `||`) for exitPercentage.
+    Clamped to [0,100] before reaching executeSellAll.
+  · No double-fire: _sellInProgress Set checked before TradingEngine.stop().
+  · Sell loop: _hasTokens check before attempting each wallet.
+    Partial failure tolerated; errors logged, sweep still fires.
+  · Sweep: fires after sell loop completes + 9s delay.
+    swept field in auto-sell-complete reflects whether sweep ACTUALLY ran.
+  · UI: onAutoSellFailed clears cache AND calls refreshTokensView().
+
+TARGETS AND FLOOR
+  · MC floor locked the moment allTargetsHit transitions to true.
+  · allTargetsHit, mcFloor, and baseMC all persisted to storage
+    at the moment of first target hit.
+  · Floor defense: mc-pace emitted when raw MC drops > 5% below floor.
+  · Floor never released. Deadline expiry does not release it.
+  · Post-floor urgency scales with floor gap, not fixed at 2.5.
+
+SESSION RESUME
+  · launchTime present → use it as deadline base.
+  · launchTime absent → use params.id (= _launchStartTs since v1).
+  · Neither present → use Date.now() (new session, no deadline drift).
+  · _allDeps declared OUTSIDE try{} block. (r61-1 — most critical)
+  · 'selling' reset to 'active' on cold reload ONLY, not mid-session.
+  · BudgetLedger.init() called with max budget before engines restart.
+  · Blob URLs stripped before processing. (r48-4)
+  · lastTradeTs initialized to Date.now()-5000 (not 0) to prevent
+    first-poll false trigger.
+
+═══════════════════════════════════════════════════════════════
+SIMULATION SCENARIOS  (trace every one end-to-end)
+═══════════════════════════════════════════════════════════════
+
+For each scenario: state starting conditions → trace code path
+step by step → identify exact line of failure if any → state
+failure mode (crash / silent wrong result / stranded funds /
+stale UI / data corruption / passes correctly).
+
+LAUNCH PATHS
+S1.  Full happy path: valid key → correct budget → wallets
+     generated → funded → launch → trading → organic trigger →
+     sell all → sweep → completed card. Verify all events fire
+     in correct order with correct payloads.
+S2.  Launch with 0 pre-generated wallets (empty clusterAccounts).
+S3.  Rapid double-click on Launch button within 50ms.
+S4.  Second browser tab also calls launchToken simultaneously.
+S5.  IPFS upload fails all 4 retries → metadataUri = '' →
+     onProgress fires {step:'ipfs', status:'done', metadataUri:''} →
+     renderer should warn user, not show green tick silently.
+S6.  Token create RPC times out on all 3 attempts → error thrown →
+     isLaunching must be reset to false, button re-enabled.
+S7.  Wallet funding: batch 3 of 7 fails all 3 retries. Verify
+     confirmed count is 6×7 = 42, not 7×7 = 49.
+S8.  Second launch while first token is actively trading:
+     Two TE sessions, two RMM sessions, two poll intervals, two
+     cards. Volume from token A must not appear in token B's stats.
+
+INPUT EDGE CASES
+S9.  clusterSize = -5: Math.abs → 5, not error and not 0.
+S10. clusterSize = 0: Math.max(1, 0) → 1.
+S11. Budget = 0: launch blocked with friendly toast, not RPC error.
+S12. exitPercentage = -5: clamped to 0 at UI, at record write,
+     at executeSellAll, at _executeSellReal, at auto-trigger path.
+S13. exitPercentage = 101: clamped to 100 at all five locations.
+S14. exitPercentage = NaN (empty field): falls back to 100 at all
+     five locations. NaN ?? 100 = NaN (NaN is not null/undefined) —
+     must use isNaN() check, not bare ??.
+S15. sellTrigger = 0: no organic trigger active. Manual sell only.
+S16. Private key = 31 bytes: _keypairFromBs58 throws → caught by
+     all callers with try/catch; no crash; appropriate error shown.
+S17. Private key = 64 bytes (keypair): accepted correctly.
+
+WALLET STATE FAILURES
+S18. One wallet has null privateKey: try/catch in sell loop skips
+     it, logs warning, continues with remaining wallets.
+S19. One wallet has null address: wallets.filter guard in _redistribute
+     skips it; loop guard in _safeRedistribute skips it.
+S20. All 5000 wallets below MIN_SOL: _safeRedistribute fires ONCE
+     (guarded by _redistributedThisPass flag). Not 5000 times.
+S21. Dev wallet balance = 0.05 SOL during redistribution: skipped
+     (< 0.06 threshold). Wallets stay below MIN_SOL. They are
+     skipped this cycle with a 2s delay, then retry next cycle.
+S22. All wallets have zero token balance when trigger fires:
+     _hasTokens returns false for all → no sell attempts → no
+     wasted fees → sweep fires for remaining SOL.
+S23. knownWallets empty (corrupted clusterAccounts): all bundle
+     wallet trades counted as organic. Trigger fires far too early.
+     _buildKnownWallets must guard against Array.isArray failure.
+
+TRIGGER AND SELL SCENARIOS
+S24. Organic trigger fires while _execBuy is in progress:
+     state.running=false, state.triggerFired=true set immediately.
+     The in-flight buy completes. The post-delay check at the END
+     of _delay catches it within milliseconds. No new buy starts.
+S25. Organic trigger fires during _recirculateSol:
+     `if (!state.running || state.triggerFired) break` in the
+     recirculation loop exits immediately.
+S26. Manual Sell Now clicked during the 2s delay between fireTrigger
+     and executeSellAll: _sellInProgress.has(mint) = false (not yet
+     set). Both run? Or does the earlier check catch it?
+     VERIFY: _sellInProgress is checked at the TOP of executeSellAll
+     BEFORE TradingEngine.stop. If the auto-trigger path calls
+     executeSellAll via setTimeout(2000) and manual also calls it,
+     the first one sets _sellInProgress and the second returns early.
+S27. executeSellAll called when devKey is null: sweep block skipped,
+     _sweepAttempted = false, auto-sell-complete emitted with
+     swept:false, renderer shows warning toast (not "consolidated" toast).
+S28. 60% of sell transactions fail all 3 retries: errors[] populated,
+     sweep fires anyway for the SOL freed by the 40% that succeeded.
+     Status marked 'completed'. errors logged.
+S29. executeSellAll fails in the catch path (e.g., Web3.js not loaded):
+     TradingEngine.stop + RMM.stop already called before try block.
+     Status restored to 'active'. _sellInProgress cleared in finally.
+     auto-sell-failed emitted. Renderer: cache invalidated, card
+     reverts to LIVE, Sell Now re-enabled. (I12 invariant)
+S30. Sweep getBalance returns 0 for all wallets (sell not yet confirmed):
+     9s buffer should prevent this. If it still happens (extreme
+     congestion), lamports ≤ FEE (20000) → skip. SOL temporarily
+     stranded. User would need to manually recover. Log clearly.
+
+SESSION RESUME SCENARIOS
+S31. Cold reload with allTargetsHit=true and mcFloor persisted:
+     RMM.start() restores both from params. Floor defense active
+     immediately. No 5s gap of unprotected floor.
+S32. Cold reload with baseMC=0 (not yet latched):
+     Trigger threshold = 0 * multiplier = 0. organicMC > 0 immediately.
+     FALSE TRIGGER on first poll. Verify this is prevented:
+     `if (multiplier > 0 && !state.triggerFired && state.baseMC > 0)`
+     in RMM _poll — the `state.baseMC > 0` guard blocks firing until
+     baseMC is latched from first poll.
+S33. Cold reload with session in 'selling' status (interrupted sell):
+     Reset to 'active' ONLY if _sasTriggerFiredMints does not contain
+     the mint. If fireTrigger was called in THIS JS session, do NOT reset.
+S34. Cold reload with very old record (launchTime missing, id present):
+     _absoluteDeadline uses params.id (correct). state.startTs uses
+     params.id (correct). Urgency and MC pace use correct elapsed time.
+S35. Two rapid visibilitychange events within 2 seconds:
+     clearTimeout(_resumeDebounceTimer) on first event cancels the
+     pending _resumeActive. Second event resets the 2s timer.
+     _resumeActive fires only once.
+S36. Cold reload + immediate _resumeActive + organic trigger fires
+     within 2s of reload: _sasTriggerFiredMints has the mint (fireTrigger
+     was called). _resumeActive skips the 'selling' reset. No double-start.
+
+MARKET CONDITIONS
+S37. First poll tick after page reload returns 50 trades:
+     lastTradeTs = Date.now()-5000. All 50 trades have timestamps
+     older than 5s ago → filtered out. organicBuyVolUSD = 0. No
+     false trigger on first tick.
+S38. Same no-sig trade in 3 consecutive poll ticks:
+     _noSigCounter reset to 0 at start of EACH tick. Same trade
+     at ordinal position 0 gets key 'ns:user:amt:ts:0' every tick.
+     _seenSigs has it from tick 1 → filtered in ticks 2 and 3. Correct.
+S39. Non-bundle wallet sells 40% of supply → td.mc drops 35% below
+     mcFloor. Floor defense: mc-pace emitted with behind:true and
+     floorDefense:true. TradingEngine _buyBias increases. Trading
+     continues. baseMC was preserved from launch → trigger threshold
+     unchanged.
+S40. DexScreener returns null for new token (< 30 min old):
+     pump.fun primary always returns data for active tokens.
+     DexScreener provides liquidity depth only. If DexScreener fails,
+     liq stays at 0 (not overwritten) → no chart distortion.
+S41. Both APIs fail simultaneously:
+     _fetchTokenData returns null. RMM _poll has `if (!td) return` →
+     skip tick, release lock. Next tick (5s) retries normally.
+
+PERFORMANCE
+S42. 5000 wallet cluster — _redistribute checks ALL balances via
+     Promise.allSettled in one pass (O(N)), then batches only the
+     ones below threshold (O(M × 7)). Verify no serial balance check.
+S43. 50 concurrent active-token poll intervals, all firing at once:
+     _getCachedLaunches deduplication: all 50 share ONE in-flight IIFE.
+     Cache TTL (20s) > poll interval (15s) → cache stays warm.
+S44. chartData grows to 160 points × 10 tokens = 1600 point objects.
+     On card removal: `delete chartData[mint]` clears them. GC works.
+S45. _pollInflight entries: `delete _pollInflight[mint]` in finally{}.
+     Verify `delete` is used, not `= false`.
+
+SECURITY SCENARIOS
+S46. Mint address = `"><img src=x onerror=alert(1)>`:
+     Stored in record, displayed in card. esc() applied to all
+     template literal insertions. CSS.escape() applied to all
+     querySelector calls. No XSS.
+S47. malformed localStorage value: deployments = `{"0":{}}` (object,
+     not array). Array.isArray guard → treated as []. No crash.
+S48. Private key typed into settings: validated before storeSet.
+     Never logged. getWalletInfo call does not expose it in the
+     network panel (sent only as a local function argument, not HTTP).
+
+═══════════════════════════════════════════════════════════════
+FIVE DEEP-THINKING LENSES  (apply all to every significant bug)
+═══════════════════════════════════════════════════════════════
+
+LENS 1 — STRANDED FUNDS
+  "Could this bug permanently prevent SOL or tokens from being
+  recovered, even if the user refreshes or retries?"
+  Stranded funds have no recovery path. Ask for every transaction,
+  every sweep, every sell, every redistribution. Even a "temporary"
+  strand is critical if the user has no visible way to detect it.
+
+LENS 2 — SILENT FAILURE
+  "Could this produce a wrong result with NO error, NO console log,
+  and NO visible change to the user?"
+  Sells that send '0%'. Sweeps that return nothing. Triggers that
+  fire but sell nothing because exitPercentage clamped to 0. A
+  user who sees all the right toasts while their position is still open.
+
+LENS 3 — WORST-CASE RESUME
+  "What is the absolute worst state this could be in after a tab
+  crash, browser kill, or network loss at the WORST possible moment?"
+  For every piece of mutable state, ask: if the process died right here,
+  what would _resumeActive find, and what would it do?
+
+LENS 4 — OLD-RECORD COMPATIBILITY
+  "What if this code runs against a deployment record created 20
+  versions ago, before this field existed?"
+  Every field read from a stored record needs a safe default. undefined
+  fields are the single largest source of NaN propagation in this codebase.
+
+LENS 5 — CONCURRENT ACTION
+  "What if two things happen simultaneously that were assumed sequential?"
+  Organic trigger fires + user clicks Sell Now.
+  visibilitychange fires during the 2s trigger-to-sell window.
+  Wallet regeneration during a recirculation sell pass.
+  Two rapid Launch clicks from different browser tabs.
+  Every shared guard must be set BEFORE the first await.
+
+═══════════════════════════════════════════════════════════════
+PROCESS  (9 phases, no shortcuts, no skips)
+═══════════════════════════════════════════════════════════════
+
+PHASE 0 — FIX LOG ARCHAEOLOGY (mandatory first step)
+  Read the entire FIX LOG comment block at the top of web-api.js.
+  For each listed fix: understand WHY it was needed, what pattern
+  it exemplifies, and whether a sister path with the same root cause
+  still exists anywhere in the codebase. Create a mental model of
+  which bugs have appeared more than once.
+
+PHASE 1 — ARCHITECTURE MAP
+  Map every module, every event-bus channel name (exact string —
+  typos make emits invisible to listeners), every localStorage key
+  (with sas: prefix accounting), every async flow, every shared
+  mutable variable, and every piece of state that crosses a module
+  boundary. Identify which state is ephemeral (memory) and which
+  is persistent (localStorage). Identify which state must survive
+  a page reload and which should not.
+
+PHASE 2 — STATIC ANALYSIS (line by line, every file)
+  Read every line of every file. Apply the full audit checklist.
+  Apply all five lenses to every significant function. Apply the
+  13 bug pattern checks (A through M). Do NOT start fixing yet —
+  catalogue everything first so fixes don't mask each other.
+
+PHASE 3 — DYNAMIC SIMULATION
+  Trace all simulation scenarios. For each one: state the exact
+  starting condition, trace the code path step by step line by
+  line, identify the exact line where it fails (if any), state the
+  failure mode precisely. Pay special attention to scenarios that
+  have historically caused real bugs: S9-S17 (inputs), S24-S30
+  (trigger/sell), S31-S36 (resume).
+
+PHASE 4 — ROOT-CAUSE ATTRIBUTION
+  For every bug found: is it a symptom or a root cause? Group
+  symptoms with shared root causes. Rank by worst-case real-money
+  outcome:
+    CRITICAL = stranded funds or complete sell failure (no recovery)
+    HIGH     = silent wrong behavior or data corruption
+    MEDIUM   = recoverable with degraded experience
+    LOW      = cosmetic / logging / style
+
+PHASE 5 — IMPLEMENT FIXES
+  Fix root causes, not symptoms. For each fix:
+  (a) Quote the BEFORE code (exact, verbatim)
+  (b) Quote the AFTER code (exact)
+  (c) Add inline comment: // FIX rNN SEVERITY: [WHY, not what]
+  (d) Apply Rule R8 gate questions — any YES = trace and fix fully
+  (e) If this is an instance of a recurring PATTERN (A-M), explicitly
+      search for all other instances of the same pattern and fix them
+
+PHASE 6 — REGRESSION VERIFICATION
+  Re-read every changed function completely. Re-run all simulation
+  scenarios against the fixed code. For each fix: "Does this change
+  the behavior of any code path I haven't explicitly accounted for?"
+  If yes → trace and fix.
+
+PHASE 7 — INVARIANT PROOF
+  For each invariant I1-I12: verify it holds in the fixed code.
+  Quote the specific line(s) that enforce it. State explicitly which
+  fix restored any violated invariant.
+
+PHASE 8 — VERSION BUMP (Rule R10, atomic)
+  Bump all six version strings. Add FIX LOG entry at the TOP of
+  web-api.js for every new fix applied in this pass. Update features[]
+  arrays in BOTH engine-version emit sites.
+
+PHASE 9 — ELITE FINAL PASS (Rule R11, mandatory)
+  Ask: "If I received this project tomorrow with no prior context
+  and ran the same audit, would I find any new bugs?"
+  If YES → return to Phase 2. Repeat until genuinely NO.
+  When NO: document specifically why each risk category is now closed.
+  Reference specific fix IDs. Be precise enough for another engineer
+  to verify without running the code.
+
+═══════════════════════════════════════════════════════════════
+REQUIRED OUTPUT FORMAT  (strict, complete, no omissions)
+═══════════════════════════════════════════════════════════════
+
+## 1. EXECUTIVE SUMMARY
+Project purpose · tech stack · file count · total lines of code ·
+risk level before fixes (1–10) · production-ready before fixes?
+(yes/no + one-sentence reason per major risk category)
+
+## 2. FULL ISSUE REPORT
+Sort: CRITICAL → HIGH → MEDIUM → LOW
+For each issue:
+  ID | Severity | File:line | One-sentence problem description |
+  Root cause (mechanistic, not "there is a bug") |
+  Failure mode: crash / silent wrong result / stranded funds /
+    stale UI / data corruption |
+  Pattern triggered (A-M or none) |
+  Lens(es) triggered (1-5) |
+  Invariant(s) violated (I1-I12 or none) |
+  Simulation scenarios that trigger it |
+  Fix applied (one sentence)
+
+## 3. ROOT CAUSE DEEP-DIVE
+For the top 5 most dangerous issues:
+  • Before code (exact, verbatim — no paraphrasing)
+  • Mechanistic explanation: variable X is Y because Z,
+    causing W to evaluate to V, passed to F as P,
+    producing result R instead of expected Q
+  • Worst real-money outcome if not fixed
+  • Simulation scenario that triggers it
+  • After code (exact, verbatim)
+  • All downstream callers verified
+  • All invariants now satisfied (cite specific ones)
+
+## 4. INVARIANT STATUS TABLE
+For each of I1–I12:
+  Invariant | Violated before? | Which bug violated it |
+  Which fix restores it | Code line that enforces it
+
+## 5. FIXED CODEBASE
+Complete corrected project as downloadable ZIP.
+Every changed line has a // FIX rNN comment with WHY.
+All six version strings bumped consistently.
+FIX LOG entry added at top of web-api.js for every new fix.
+Both engine-version emit sites updated.
+
+## 6. REGRESSION VERIFICATION TABLE
+For each fix:
+  Fix ID | Changed function | Callers verified |
+  Event payload shape: unchanged / changed (listener updated) |
+  localStorage impact: none / field added (default) / field removed |
+  Gate question result: clean / secondary fix applied (describe)
+
+## 7. WORKING FEATURES CHECKLIST
+✅ Launch — IPFS, on-chain create, authority revocations, dev buy
+✅ Wallet generation — clamped count, correct storage
+✅ Funding — batch transfers, confirmed count accurate, retry backoff
+✅ Bundling — wallets pre-generated before launch, budget correct
+✅ Dev wallet management — balance live, key validated before storage
+✅ Unique buys — 4-tier amount, anti-repetition, fallback registered
+✅ Unique sells — 4-tier pct, anti-repetition, fallback registered
+✅ Trigger sell — raw on-chain MC, ?? not ||, no double-fire
+✅ Percentage trigger sell — [0,100] clamped at all 5 entry points
+✅ Targets system — floor locked, persisted, restored on resume
+✅ Reached-by logic — floor locked, trading continues post-deadline
+✅ Floor defense — buy pressure restored when MC drops below floor
+✅ Trading every 5–10 sec 24/7 — pacing engine steady from trade #1
+✅ SOL recirculation — never runs dry, redistribute once per cycle
+✅ Returns all funds to dev wallet — 9s confirm buffer, sweep complete
+✅ Sweep flag accurate — swept reflects actual execution, not devKey truthy
+✅ Non-bundle wallet resilience — organic isolated, knownWallets refreshed
+✅ Session resume — launchTime||id, all fields restored, engines restart
+✅ UI stable — no stale cards, correct toast order, live balance
+✅ Mobile / PWA — sidebar, bottom nav, touch targets, standalone mode
+✅ SW cache versioning — fresh assets on every pass for returning users
+✅ Deployment ready — CSP correct, SRI correct, all Vercel headers set
+✅ Trading stops ONLY on trigger (not deadline, not redistribution fail)
+✅ No phantom balances — confirmed-count accounting exact
+✅ No memory leaks — chartData GC, _pollInflight delete, listeners removed
+✅ onAutoSellFailed — cache invalidated, card reverts, Sell Now re-enabled
+✅ Engine badge — accurate at boot AND after launch (both emit sites)
+
+## 8. FILE STATUS REPORT
+For EVERY file:
+✅ filename.ext — fully working, no glitches
+   Fixed in this pass: [list every fix ID applied]
+   Unchanged: confirmed re-read, no new issues found
+
+## 9. SIMULATION RESULTS
+For all 48 scenarios:
+S## | PASS / FAIL | If FAIL: exact file:line + failure mode + fix ID applied
+
+## 10. BEFORE vs AFTER
+BEFORE: what worked · what failed silently · what crashed ·
+        what could strand funds · what was a security risk ·
+        what was cosmetically broken
+AFTER:  what now works · what was hardened · what can no longer
+        strand funds (cite fix ID) · what security risks are closed ·
+        what regressions were introduced and then fixed
+
+## 11. FINAL HONESTY CHECK
+State exactly ONE of:
+
+A) "No further material issues remain. Evidence:"
+   Then for each risk category, cite the specific fix ID that closes
+   it — specific enough for another engineer to verify:
+     · exitPercentage clamping — all 5 entry points
+     · Trading loop permanence — deadline / redistribute / errors
+     · Stranded funds prevention — sweep timing, partial sells
+     · Session resume correctness — all field read paths
+     · Concurrent execution — all in-progress guards
+     · Anti-repetition buffer integrity — all 4 buffers, all paths
+     · SOL recirculation — never-dry guarantee
+     · organic volume isolation — knownWallets coverage
+     · Storage integrity — array guards, namespace, blob cleanup
+     · Security — SRI, CSP, XSS, key handling
+     · UI completeness — cache invalidation on all status changes
+     · Version consistency — all 6 strings bumped
+
+or
+
+B) "Risks remain:" followed by an explicit list:
+   each with severity · location · why it was not fixed
+
+Do NOT write A unless the Elite Final Pass returned zero new findings.
+Do NOT write vague reassurances.
+Be specific. Be honest. Real money depends on it.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FILES TO ANALYZE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+<web-api.js>    — core engine: BudgetLedger, TradingEngine, RMM, sell-all,
+                  session resume, SW bridge, boot
+<renderer.js>   — UI: StateManager, chart, event handlers, launch btn,
+                  tokens view, settings, auto-sell listeners
+<sw.js>         — service worker: cache, heartbeat, message bus
+<index.html>    — HTML structure, CSP meta, SRI hash, script order
+<styles.css>    — layout, components, responsive, animations
+<mobile.css>    — mobile overrides, touch targets, safe areas
+<vercel.json>   — deployment config, security headers, CSP (must match HTML)
+<manifest.json> — PWA manifest, icons, start_url, display mode
+<package.json>  — version record (must match all other version strings)
+<README.md>     — documentation (cross-check claims against actual code)
+
+Start analysis now. Read the fix log first.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
