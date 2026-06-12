@@ -1,0 +1,1982 @@
+/**
+ * @file UniversalModuleResolverEngine.hpp
+ * @brief Universal Module Resolver Engine (UMRE) - C++20 Production Implementation
+ *
+ * Computes optimal data pathways and modular integrations for complex
+ * computational graphs with full support for arbitrary environment topologies,
+ * universal configuration mapping, dynamic resolution of interdependent modules,
+ * require-style modular loading mechanics, and seamless cross-environment
+ * compatibility including restricted topologies.
+ */
+
+#pragma once
+
+#include <algorithm>
+#include <any>
+#include <atomic>
+#include <chrono>
+#include <concepts>
+#include <condition_variable>
+#include <coroutine>
+#include <deque>
+#include <exception>
+#include <filesystem>
+#include <format>
+#include <functional>
+#include <future>
+#include <iostream>
+#include <latch>
+#include <map>
+#include <memory>
+#include <mutex>
+#include <numeric>
+#include <optional>
+#include <queue>
+#include <ranges>
+#include <semaphore>
+#include <set>
+#include <shared_mutex>
+#include <source_location>
+#include <span>
+#include <sstream>
+#include <stack>
+#include <stdexcept>
+#include <string>
+#include <string_view>
+#include <thread>
+#include <type_traits>
+#include <unordered_map>
+#include <unordered_set>
+#include <variant>
+#include <vector>
+
+namespace umre {
+
+// ============================================================
+//  Forward declarations
+// ============================================================
+
+class Module;
+class ModuleRegistry;
+class DependencyGraph;
+class PathwayOptimizer;
+class ConfigurationMapper;
+class TopologyAdapter;
+class ResolutionEngine;
+class UniversalModuleResolverEngine;
+
+// ============================================================
+//  Concepts
+// ============================================================
+
+template <typename T>
+concept ModuleConfigurableType =
+    std::is_default_constructible_v<T> && std::is_copy_constructible_v<T>;
+
+template <typename T>
+concept PathwayWeightType =
+    std::is_arithmetic_v<T> && std::totally_ordered<T>;
+
+template <typename T>
+concept SerializableType = requires(T t) {
+    { t.serialize() } -> std::convertible_to<std::string>;
+    { T::deserialize(std::string{}) } -> std::same_as<T>;
+};
+
+// ============================================================
+//  Version & build metadata
+// ============================================================
+
+struct EngineVersion {
+    uint32_t major{1};
+    uint32_t minor{0};
+    uint32_t patch{0};
+    std::string build_tag{"release"};
+
+    [[nodiscard]] std::string to_string() const {
+        return std::format("{}.{}.{}-{}", major, minor, patch, build_tag);
+    }
+};
+
+inline constexpr EngineVersion UMRE_VERSION{1, 0, 0, "production"};
+
+// ============================================================
+//  Logging subsystem
+// ============================================================
+
+enum class LogLevel : uint8_t {
+    TRACE = 0,
+    DEBUG = 1,
+    INFO = 2,
+    WARN = 3,
+    ERROR = 4,
+    FATAL = 5
+};
+
+constexpr std::string_view log_level_to_str(LogLevel l) noexcept {
+    switch (l) {
+    case LogLevel::TRACE: return "TRACE";
+    case LogLevel::DEBUG: return "DEBUG";
+    case LogLevel::INFO:  return "INFO ";
+    case LogLevel::WARN:  return "WARN ";
+    case LogLevel::ERROR: return "ERROR";
+    case LogLevel::FATAL: return "FATAL";
+    default:              return "?????";
+    }
+}
+
+class Logger {
+public:
+    using Sink = std::function<void(LogLevel, std::string_view)>;
+
+    static Logger& instance() noexcept {
+        static Logger s_instance;
+        return s_instance;
+    }
+
+    void set_level(LogLevel l) noexcept { min_level_.store(l, std::memory_order_relaxed); }
+    [[nodiscard]] LogLevel level() const noexcept { return min_level_.load(std::memory_order_relaxed); }
+
+    void add_sink(Sink s) {
+        std::lock_guard lk{mtx_};
+        sinks_.push_back(std::move(s));
+    }
+
+    void log(LogLevel lvl, std::string_view msg,
+             const std::source_location& loc = std::source_location::current()) {
+        if (lvl < min_level_.load(std::memory_order_relaxed)) return;
+
+        auto now = std::chrono::system_clock::now();
+        auto ts  = std::chrono::duration_cast<std::chrono::microseconds>(
+                       now.time_since_epoch()).count();
+
+        std::string entry = std::format(
+            "[{:>16}µs] [{}] [{}:{}] {}",
+            ts, log_level_to_str(lvl),
+            std::filesystem::path(loc.file_name()).filename().string(),
+            loc.line(), msg);
+
+        std::lock_guard lk{mtx_};
+        for (auto& s : sinks_) s(lvl, entry);
+    }
+
+    template <typename... Args>
+    void logf(LogLevel lvl, std::format_string<Args...> fmt, Args&&... args,
+              const std::source_location& loc = std::source_location::current()) {
+        log(lvl, std::format(fmt, std::forward<Args>(args)...), loc);
+    }
+
+private:
+    Logger() {
+        sinks_.push_back([](LogLevel, std::string_view msg) {
+            std::cout << msg << '\n';
+        });
+    }
+    std::atomic<LogLevel> min_level_{LogLevel::INFO};
+    std::mutex mtx_;
+    std::vector<Sink> sinks_;
+};
+
+#define UMRE_LOG(level, msg) \
+    ::umre::Logger::instance().log(level, msg, std::source_location::current())
+
+#define UMRE_LOGF(level, fmt, ...) \
+    ::umre::Logger::instance().log( \
+        level, std::format(fmt, __VA_ARGS__), std::source_location::current())
+
+#define UMRE_TRACE(msg)  UMRE_LOG(::umre::LogLevel::TRACE, msg)
+#define UMRE_DEBUG(msg)  UMRE_LOG(::umre::LogLevel::DEBUG, msg)
+#define UMRE_INFO(msg)   UMRE_LOG(::umre::LogLevel::INFO,  msg)
+#define UMRE_WARN(msg)   UMRE_LOG(::umre::LogLevel::WARN,  msg)
+#define UMRE_ERROR(msg)  UMRE_LOG(::umre::LogLevel::ERROR, msg)
+#define UMRE_FATAL(msg)  UMRE_LOG(::umre::LogLevel::FATAL, msg)
+
+// ============================================================
+//  Error types
+// ============================================================
+
+class UMREException : public std::runtime_error {
+public:
+    explicit UMREException(std::string msg,
+                           std::source_location loc = std::source_location::current())
+        : std::runtime_error(std::format("[{}:{}] {}", loc.file_name(), loc.line(), msg))
+        , loc_(loc) {}
+
+    [[nodiscard]] const std::source_location& location() const noexcept { return loc_; }
+
+private:
+    std::source_location loc_;
+};
+
+class ModuleNotFoundError   : public UMREException { using UMREException::UMREException; };
+class CircularDependencyError : public UMREException { using UMREException::UMREException; };
+class PathwayResolutionError  : public UMREException { using UMREException::UMREException; };
+class ConfigurationError      : public UMREException { using UMREException::UMREException; };
+class TopologyError           : public UMREException { using UMREException::UMREException; };
+class LoadError               : public UMREException { using UMREException::UMREException; };
+
+// ============================================================
+//  Type aliases
+// ============================================================
+
+using ModuleID      = std::string;
+using NodeID        = uint64_t;
+using EdgeWeight    = double;
+using ConfigKey     = std::string;
+using ConfigValue   = std::variant<bool, int64_t, double, std::string, std::vector<std::string>>;
+using ConfigMap     = std::unordered_map<ConfigKey, ConfigValue>;
+using Timestamp     = std::chrono::steady_clock::time_point;
+
+// ============================================================
+//  Module state machine
+// ============================================================
+
+enum class ModuleState : uint8_t {
+    UNREGISTERED = 0,
+    REGISTERED   = 1,
+    LOADING      = 2,
+    LOADED       = 3,
+    RESOLVING    = 4,
+    RESOLVED     = 5,
+    ACTIVE       = 6,
+    SUSPENDED    = 7,
+    ERROR        = 8,
+    UNLOADING    = 9,
+    UNLOADED     = 10
+};
+
+constexpr std::string_view module_state_str(ModuleState s) noexcept {
+    switch (s) {
+    case ModuleState::UNREGISTERED: return "UNREGISTERED";
+    case ModuleState::REGISTERED:   return "REGISTERED";
+    case ModuleState::LOADING:      return "LOADING";
+    case ModuleState::LOADED:       return "LOADED";
+    case ModuleState::RESOLVING:    return "RESOLVING";
+    case ModuleState::RESOLVED:     return "RESOLVED";
+    case ModuleState::ACTIVE:       return "ACTIVE";
+    case ModuleState::SUSPENDED:    return "SUSPENDED";
+    case ModuleState::ERROR:        return "ERROR";
+    case ModuleState::UNLOADING:    return "UNLOADING";
+    case ModuleState::UNLOADED:     return "UNLOADED";
+    default:                        return "UNKNOWN";
+    }
+}
+
+// ============================================================
+//  Topology types
+// ============================================================
+
+enum class TopologyType : uint8_t {
+    FLAT,           ///< All modules at the same level, no hierarchy
+    HIERARCHICAL,   ///< Tree-structured module hierarchy
+    MESH,           ///< Full-mesh inter-module connections
+    RING,           ///< Ring topology with directional flow
+    STAR,           ///< Central hub with spoke modules
+    HYBRID,         ///< Mix of topologies
+    RESTRICTED      ///< Access-controlled / limited connectivity
+};
+
+constexpr std::string_view topology_type_str(TopologyType t) noexcept {
+    switch (t) {
+    case TopologyType::FLAT:         return "FLAT";
+    case TopologyType::HIERARCHICAL: return "HIERARCHICAL";
+    case TopologyType::MESH:         return "MESH";
+    case TopologyType::RING:         return "RING";
+    case TopologyType::STAR:         return "STAR";
+    case TopologyType::HYBRID:       return "HYBRID";
+    case TopologyType::RESTRICTED:   return "RESTRICTED";
+    default:                         return "UNKNOWN";
+    }
+}
+
+// ============================================================
+//  Pathway representation
+// ============================================================
+
+struct PathwayEdge {
+    NodeID   from{0};
+    NodeID   to{0};
+    EdgeWeight weight{1.0};
+    EdgeWeight latency{0.0};
+    EdgeWeight bandwidth{std::numeric_limits<double>::max()};
+    bool     directed{true};
+    bool     active{true};
+    std::string label;
+
+    [[nodiscard]] bool is_valid() const noexcept {
+        return from != to && weight >= 0.0 && latency >= 0.0 && bandwidth > 0.0;
+    }
+};
+
+struct PathwayNode {
+    NodeID      id{0};
+    ModuleID    module_id;
+    std::string label;
+    double      compute_cost{0.0};
+    double      memory_cost{0.0};
+    bool        is_gateway{false};
+    bool        is_terminal{false};
+    ConfigMap   attributes;
+
+    [[nodiscard]] double total_cost() const noexcept {
+        return compute_cost + memory_cost;
+    }
+};
+
+struct OptimalPathway {
+    std::vector<NodeID>   nodes;
+    std::vector<PathwayEdge> edges;
+    double total_weight{0.0};
+    double total_latency{0.0};
+    double min_bandwidth{0.0};
+    bool   is_feasible{false};
+    std::string resolution_strategy;
+    std::chrono::nanoseconds computation_time{0};
+
+    [[nodiscard]] size_t hop_count() const noexcept {
+        return nodes.empty() ? 0 : nodes.size() - 1;
+    }
+
+    [[nodiscard]] std::string to_string() const {
+        std::ostringstream oss;
+        oss << "OptimalPathway{"
+            << "hops=" << hop_count()
+            << ", weight=" << total_weight
+            << ", latency=" << total_latency
+            << ", bw=" << min_bandwidth
+            << ", feasible=" << (is_feasible ? "yes" : "no")
+            << ", strategy=" << resolution_strategy
+            << "}";
+        return oss.str();
+    }
+};
+
+// ============================================================
+//  Module descriptor
+// ============================================================
+
+struct ModuleDescriptor {
+    ModuleID              id;
+    std::string           name;
+    std::string           version;
+    std::string           description;
+    std::vector<ModuleID> dependencies;        ///< Direct hard dependencies
+    std::vector<ModuleID> soft_dependencies;   ///< Optional / weak links
+    std::vector<ModuleID> provides;            ///< Virtual IDs this module satisfies
+    ConfigMap             default_config;
+    ConfigMap             env_overrides;
+    TopologyType          preferred_topology{TopologyType::FLAT};
+    double                priority{1.0};       ///< Resolution priority weight
+    bool                  lazy{false};         ///< Defer loading until first use
+    bool                  singleton{true};     ///< Single instance per registry
+
+    [[nodiscard]] bool has_dependency(const ModuleID& dep) const noexcept {
+        return std::ranges::find(dependencies, dep) != dependencies.end()
+            || std::ranges::find(soft_dependencies, dep) != soft_dependencies.end();
+    }
+};
+
+// ============================================================
+//  Module factory / loader interface
+// ============================================================
+
+class IModuleLoader {
+public:
+    virtual ~IModuleLoader() = default;
+
+    /// Load the module and return an opaque handle
+    virtual std::any load(const ModuleDescriptor& desc, const ConfigMap& cfg) = 0;
+
+    /// Unload a previously loaded module
+    virtual void unload(const ModuleID& id, std::any& handle) = 0;
+
+    /// Check whether this loader can handle the given descriptor
+    [[nodiscard]] virtual bool can_load(const ModuleDescriptor& desc) const noexcept = 0;
+
+    /// Return a human-readable loader name
+    [[nodiscard]] virtual std::string_view name() const noexcept = 0;
+};
+
+// ============================================================
+//  Default no-op loader (used for pure-compute modules)
+// ============================================================
+
+class NullModuleLoader final : public IModuleLoader {
+public:
+    std::any load(const ModuleDescriptor& desc, const ConfigMap&) override {
+        UMRE_LOGF(LogLevel::DEBUG, "NullLoader: loaded module '{}'", desc.id);
+        return std::make_any<std::string>(desc.id);
+    }
+    void unload(const ModuleID& id, std::any&) override {
+        UMRE_LOGF(LogLevel::DEBUG, "NullLoader: unloaded module '{}'", id);
+    }
+    [[nodiscard]] bool can_load(const ModuleDescriptor&) const noexcept override { return true; }
+    [[nodiscard]] std::string_view name() const noexcept override { return "NullLoader"; }
+};
+
+// ============================================================
+//  Module runtime object
+// ============================================================
+
+class Module {
+public:
+    explicit Module(ModuleDescriptor desc)
+        : desc_(std::move(desc))
+        , state_(ModuleState::REGISTERED)
+        , created_at_(std::chrono::steady_clock::now()) {
+        UMRE_LOGF(LogLevel::DEBUG, "Module constructed: id='{}' ver='{}'",
+                  desc_.id, desc_.version);
+    }
+
+    ~Module() {
+        UMRE_LOGF(LogLevel::DEBUG, "Module destructed: id='{}'", desc_.id);
+    }
+
+    // Non-copyable, movable
+    Module(const Module&) = delete;
+    Module& operator=(const Module&) = delete;
+    Module(Module&&) noexcept = default;
+    Module& operator=(Module&&) noexcept = default;
+
+    // ---- Accessors ----
+
+    [[nodiscard]] const ModuleID& id()       const noexcept { return desc_.id; }
+    [[nodiscard]] const std::string& name()  const noexcept { return desc_.name; }
+    [[nodiscard]] const std::string& version() const noexcept { return desc_.version; }
+    [[nodiscard]] const ModuleDescriptor& descriptor() const noexcept { return desc_; }
+
+    [[nodiscard]] ModuleState state() const noexcept {
+        return state_.load(std::memory_order_acquire);
+    }
+
+    void set_state(ModuleState s) noexcept {
+        ModuleState old = state_.exchange(s, std::memory_order_release);
+        UMRE_LOGF(LogLevel::TRACE, "Module '{}' state: {} -> {}",
+                  desc_.id, module_state_str(old), module_state_str(s));
+    }
+
+    [[nodiscard]] bool is_active() const noexcept {
+        return state() == ModuleState::ACTIVE;
+    }
+
+    [[nodiscard]] bool is_ready() const noexcept {
+        auto s = state();
+        return s == ModuleState::RESOLVED || s == ModuleState::ACTIVE;
+    }
+
+    // ---- Configuration ----
+
+    void apply_config(const ConfigMap& cfg) {
+        std::unique_lock lk{cfg_mtx_};
+        for (auto& [k, v] : cfg) {
+            config_[k] = v;
+        }
+        UMRE_LOGF(LogLevel::DEBUG, "Module '{}': applied {} config entries",
+                  desc_.id, cfg.size());
+    }
+
+    [[nodiscard]] std::optional<ConfigValue> get_config(const ConfigKey& key) const {
+        std::shared_lock lk{cfg_mtx_};
+        auto it = config_.find(key);
+        if (it == config_.end()) return std::nullopt;
+        return it->second;
+    }
+
+    [[nodiscard]] const ConfigMap& config() const noexcept { return config_; }
+
+    // ---- Handle (loaded object) ----
+
+    void set_handle(std::any h) {
+        std::lock_guard lk{handle_mtx_};
+        handle_ = std::move(h);
+    }
+
+    [[nodiscard]] const std::any& handle() const noexcept { return handle_; }
+
+    // ---- Timing ----
+
+    [[nodiscard]] Timestamp created_at()  const noexcept { return created_at_; }
+    [[nodiscard]] Timestamp resolved_at() const noexcept { return resolved_at_; }
+    [[nodiscard]] Timestamp loaded_at()   const noexcept { return loaded_at_; }
+
+    void mark_resolved() noexcept { resolved_at_ = std::chrono::steady_clock::now(); }
+    void mark_loaded()   noexcept { loaded_at_   = std::chrono::steady_clock::now(); }
+
+    // ---- Metrics ----
+
+    void increment_resolve_calls() noexcept {
+        resolve_calls_.fetch_add(1, std::memory_order_relaxed);
+    }
+    [[nodiscard]] uint64_t resolve_calls() const noexcept {
+        return resolve_calls_.load(std::memory_order_relaxed);
+    }
+
+    // ---- Error tracking ----
+
+    void record_error(std::string msg) {
+        std::lock_guard lk{error_mtx_};
+        error_log_.push_back({std::chrono::steady_clock::now(), std::move(msg)});
+        set_state(ModuleState::ERROR);
+    }
+
+    [[nodiscard]] bool has_errors() const noexcept {
+        std::lock_guard lk{error_mtx_};
+        return !error_log_.empty();
+    }
+
+    [[nodiscard]] std::vector<std::pair<Timestamp, std::string>> errors() const {
+        std::lock_guard lk{error_mtx_};
+        return error_log_;
+    }
+
+private:
+    ModuleDescriptor desc_;
+    std::atomic<ModuleState> state_;
+    ConfigMap config_;
+    mutable std::shared_mutex cfg_mtx_;
+    std::any handle_;
+    mutable std::mutex handle_mtx_;
+    mutable std::mutex error_mtx_;
+    std::vector<std::pair<Timestamp, std::string>> error_log_;
+    Timestamp created_at_;
+    Timestamp resolved_at_{};
+    Timestamp loaded_at_{};
+    std::atomic<uint64_t> resolve_calls_{0};
+};
+
+// ============================================================
+//  Dependency graph
+// ============================================================
+
+class DependencyGraph {
+public:
+    DependencyGraph() = default;
+
+    void add_node(NodeID id, ModuleID module) {
+        std::unique_lock lk{mtx_};
+        nodes_[id] = PathwayNode{id, std::move(module)};
+        adj_[id];           // ensure entry exists
+        rev_adj_[id];
+        UMRE_LOGF(LogLevel::TRACE, "DependencyGraph: add node {} ({})", id, nodes_[id].module_id);
+    }
+
+    void add_edge(NodeID from, NodeID to, EdgeWeight w = 1.0) {
+        std::unique_lock lk{mtx_};
+        if (nodes_.find(from) == nodes_.end())
+            throw TopologyError(std::format("add_edge: node {} not found", from));
+        if (nodes_.find(to) == nodes_.end())
+            throw TopologyError(std::format("add_edge: node {} not found", to));
+
+        PathwayEdge e{from, to, w};
+        if (!e.is_valid())
+            throw TopologyError(std::format("add_edge: invalid edge {}->{}", from, to));
+
+        adj_[from].push_back(e);
+        rev_adj_[to].push_back(e);
+        edge_count_++;
+        UMRE_LOGF(LogLevel::TRACE, "DependencyGraph: add edge {}->{} w={}", from, to, w);
+    }
+
+    [[nodiscard]] bool has_node(NodeID id) const noexcept {
+        std::shared_lock lk{mtx_};
+        return nodes_.find(id) != nodes_.end();
+    }
+
+    [[nodiscard]] size_t node_count() const noexcept {
+        std::shared_lock lk{mtx_};
+        return nodes_.size();
+    }
+
+    [[nodiscard]] size_t edge_count() const noexcept {
+        std::shared_lock lk{mtx_};
+        return edge_count_;
+    }
+
+    [[nodiscard]] const PathwayNode& node(NodeID id) const {
+        std::shared_lock lk{mtx_};
+        auto it = nodes_.find(id);
+        if (it == nodes_.end())
+            throw TopologyError(std::format("node {} not found", id));
+        return it->second;
+    }
+
+    [[nodiscard]] std::vector<PathwayEdge> outgoing(NodeID id) const {
+        std::shared_lock lk{mtx_};
+        auto it = adj_.find(id);
+        if (it == adj_.end()) return {};
+        return it->second;
+    }
+
+    [[nodiscard]] std::vector<PathwayEdge> incoming(NodeID id) const {
+        std::shared_lock lk{mtx_};
+        auto it = rev_adj_.find(id);
+        if (it == rev_adj_.end()) return {};
+        return it->second;
+    }
+
+    /// Returns topological sort order; throws CircularDependencyError if cycle detected
+    [[nodiscard]] std::vector<NodeID> topological_sort() const {
+        std::shared_lock lk{mtx_};
+        std::unordered_map<NodeID, int> in_degree;
+
+        for (auto& [n, _] : nodes_) in_degree[n] = 0;
+        for (auto& [n, edges] : adj_)
+            for (auto& e : edges)
+                in_degree[e.to]++;
+
+        std::queue<NodeID> q;
+        for (auto& [n, deg] : in_degree)
+            if (deg == 0) q.push(n);
+
+        std::vector<NodeID> order;
+        order.reserve(nodes_.size());
+
+        while (!q.empty()) {
+            NodeID cur = q.front(); q.pop();
+            order.push_back(cur);
+            auto it = adj_.find(cur);
+            if (it != adj_.end()) {
+                for (auto& e : it->second) {
+                    if (--in_degree[e.to] == 0)
+                        q.push(e.to);
+                }
+            }
+        }
+
+        if (order.size() != nodes_.size()) {
+            // Find cycle members for better diagnostics
+            std::vector<NodeID> cycle_nodes;
+            for (auto& [n, deg] : in_degree)
+                if (deg > 0) cycle_nodes.push_back(n);
+            std::string cycle_str;
+            for (auto nid : cycle_nodes)
+                cycle_str += std::to_string(nid) + " ";
+            throw CircularDependencyError(
+                std::format("Circular dependency detected among nodes: {}", cycle_str));
+        }
+
+        return order;
+    }
+
+    /// Detect all cycles via DFS
+    [[nodiscard]] std::vector<std::vector<NodeID>> find_cycles() const {
+        std::shared_lock lk{mtx_};
+        std::vector<std::vector<NodeID>> cycles;
+        std::unordered_map<NodeID, uint8_t> color; // 0=white,1=grey,2=black
+        std::vector<NodeID> path;
+
+        std::function<void(NodeID)> dfs = [&](NodeID u) {
+            color[u] = 1;
+            path.push_back(u);
+            auto it = adj_.find(u);
+            if (it != adj_.end()) {
+                for (auto& e : it->second) {
+                    NodeID v = e.to;
+                    if (color[v] == 1) {
+                        // Found back edge → extract cycle
+                        std::vector<NodeID> cycle;
+                        auto pos = std::ranges::find(path, v);
+                        std::copy(pos, path.end(), std::back_inserter(cycle));
+                        cycle.push_back(v);
+                        cycles.push_back(cycle);
+                    } else if (color[v] == 0) {
+                        dfs(v);
+                    }
+                }
+            }
+            path.pop_back();
+            color[u] = 2;
+        };
+
+        for (auto& [n, _] : nodes_)
+            if (color[n] == 0) dfs(n);
+
+        return cycles;
+    }
+
+    /// Compute shortest path (Dijkstra)
+    [[nodiscard]] std::optional<OptimalPathway>
+    shortest_path(NodeID src, NodeID dst) const {
+        std::shared_lock lk{mtx_};
+
+        if (nodes_.find(src) == nodes_.end() || nodes_.find(dst) == nodes_.end())
+            return std::nullopt;
+
+        auto t_start = std::chrono::high_resolution_clock::now();
+
+        std::unordered_map<NodeID, double> dist;
+        std::unordered_map<NodeID, NodeID> prev;
+        std::priority_queue<std::pair<double, NodeID>,
+                            std::vector<std::pair<double, NodeID>>,
+                            std::greater<>> pq;
+
+        for (auto& [n, _] : nodes_) dist[n] = std::numeric_limits<double>::infinity();
+        dist[src] = 0.0;
+        pq.emplace(0.0, src);
+
+        while (!pq.empty()) {
+            auto [d, u] = pq.top(); pq.pop();
+            if (d > dist[u]) continue;
+            if (u == dst) break;
+            auto it = adj_.find(u);
+            if (it == adj_.end()) continue;
+            for (auto& e : it->second) {
+                if (!e.active) continue;
+                double nd = dist[u] + e.weight;
+                if (nd < dist[e.to]) {
+                    dist[e.to] = nd;
+                    prev[e.to] = u;
+                    pq.emplace(nd, e.to);
+                }
+            }
+        }
+
+        if (std::isinf(dist[dst])) return std::nullopt;
+
+        // Reconstruct path
+        OptimalPathway path;
+        path.total_weight = dist[dst];
+        path.is_feasible = true;
+        path.resolution_strategy = "dijkstra";
+
+        NodeID cur = dst;
+        while (cur != src) {
+            path.nodes.push_back(cur);
+            NodeID p = prev[cur];
+            auto it = adj_.find(p);
+            if (it != adj_.end()) {
+                for (auto& e : it->second) {
+                    if (e.to == cur) {
+                        path.edges.push_back(e);
+                        path.total_latency += e.latency;
+                        break;
+                    }
+                }
+            }
+            cur = p;
+        }
+        path.nodes.push_back(src);
+        std::ranges::reverse(path.nodes);
+        std::ranges::reverse(path.edges);
+
+        // Min bandwidth across edges
+        if (!path.edges.empty()) {
+            path.min_bandwidth = std::ranges::min(
+                path.edges | std::views::transform(&PathwayEdge::bandwidth));
+        }
+
+        auto t_end = std::chrono::high_resolution_clock::now();
+        path.computation_time = t_end - t_start;
+
+        return path;
+    }
+
+    /// All-pairs shortest paths (Floyd-Warshall) for smaller graphs
+    [[nodiscard]] std::unordered_map<NodeID, std::unordered_map<NodeID, double>>
+    all_pairs_shortest_paths() const {
+        std::shared_lock lk{mtx_};
+        const size_t N = nodes_.size();
+        if (N > 512) {
+            UMRE_WARN("all_pairs_shortest_paths: large graph, may be slow");
+        }
+
+        std::unordered_map<NodeID, std::unordered_map<NodeID, double>> dist;
+        for (auto& [u, _] : nodes_)
+            for (auto& [v, _2] : nodes_)
+                dist[u][v] = (u == v) ? 0.0 : std::numeric_limits<double>::infinity();
+
+        for (auto& [u, edges] : adj_)
+            for (auto& e : edges)
+                if (e.active && e.weight < dist[u][e.to])
+                    dist[u][e.to] = e.weight;
+
+        // Collect node IDs for iteration
+        std::vector<NodeID> nids;
+        nids.reserve(nodes_.size());
+        for (auto& [n, _] : nodes_) nids.push_back(n);
+
+        for (auto k : nids)
+            for (auto i : nids)
+                for (auto j : nids)
+                    if (dist[i][k] != std::numeric_limits<double>::infinity() &&
+                        dist[k][j] != std::numeric_limits<double>::infinity())
+                        dist[i][j] = std::min(dist[i][j], dist[i][k] + dist[k][j]);
+
+        return dist;
+    }
+
+    void remove_node(NodeID id) {
+        std::unique_lock lk{mtx_};
+        nodes_.erase(id);
+        adj_.erase(id);
+        rev_adj_.erase(id);
+        for (auto& [n, edges] : adj_) {
+            std::erase_if(edges, [id](const PathwayEdge& e){ return e.to == id; });
+        }
+        UMRE_LOGF(LogLevel::DEBUG, "DependencyGraph: removed node {}", id);
+    }
+
+    void clear() noexcept {
+        std::unique_lock lk{mtx_};
+        nodes_.clear();
+        adj_.clear();
+        rev_adj_.clear();
+        edge_count_ = 0;
+    }
+
+private:
+    mutable std::shared_mutex mtx_;
+    std::unordered_map<NodeID, PathwayNode>              nodes_;
+    std::unordered_map<NodeID, std::vector<PathwayEdge>> adj_;
+    std::unordered_map<NodeID, std::vector<PathwayEdge>> rev_adj_;
+    size_t edge_count_{0};
+};
+
+// ============================================================
+//  Configuration mapper
+// ============================================================
+
+class ConfigurationMapper {
+public:
+    explicit ConfigurationMapper(std::string env_tag = "default")
+        : env_tag_(std::move(env_tag)) {
+        UMRE_LOGF(LogLevel::INFO, "ConfigurationMapper: env='{}' initialized", env_tag_);
+    }
+
+    void register_global(const ConfigKey& k, ConfigValue v) {
+        std::unique_lock lk{mtx_};
+        global_[k] = std::move(v);
+    }
+
+    void register_module_config(const ModuleID& mod, ConfigMap cfg) {
+        std::unique_lock lk{mtx_};
+        module_configs_[mod] = std::move(cfg);
+    }
+
+    void register_env_override(const std::string& env, const ConfigKey& k, ConfigValue v) {
+        std::unique_lock lk{mtx_};
+        env_overrides_[env][k] = std::move(v);
+    }
+
+    /// Merge global + module-specific + environment overrides into resolved config
+    [[nodiscard]] ConfigMap resolve(const ModuleDescriptor& desc) const {
+        std::shared_lock lk{mtx_};
+        ConfigMap result = global_;
+
+        // Layer: module default_config
+        for (auto& [k, v] : desc.default_config)
+            result[k] = v;
+
+        // Layer: registered module-specific overrides
+        if (auto it = module_configs_.find(desc.id); it != module_configs_.end())
+            for (auto& [k, v] : it->second)
+                result[k] = v;
+
+        // Layer: environment overrides
+        if (auto it = env_overrides_.find(env_tag_); it != env_overrides_.end())
+            for (auto& [k, v] : it->second)
+                result[k] = v;
+
+        // Layer: descriptor env_overrides (highest priority)
+        for (auto& [k, v] : desc.env_overrides)
+            result[k] = v;
+
+        UMRE_LOGF(LogLevel::TRACE, "ConfigMapper: resolved {} entries for module '{}'",
+                  result.size(), desc.id);
+        return result;
+    }
+
+    void set_environment(std::string env) {
+        std::unique_lock lk{mtx_};
+        env_tag_ = std::move(env);
+        UMRE_LOGF(LogLevel::INFO, "ConfigMapper: environment changed to '{}'", env_tag_);
+    }
+
+    [[nodiscard]] std::string_view environment() const noexcept { return env_tag_; }
+
+    void dump(std::ostream& os) const {
+        std::shared_lock lk{mtx_};
+        os << "=== ConfigurationMapper (env=" << env_tag_ << ") ===\n";
+        os << "Global entries: " << global_.size() << "\n";
+        os << "Module configs: " << module_configs_.size() << "\n";
+        os << "Env override sets: " << env_overrides_.size() << "\n";
+    }
+
+private:
+    mutable std::shared_mutex mtx_;
+    std::string env_tag_;
+    ConfigMap global_;
+    std::unordered_map<ModuleID, ConfigMap> module_configs_;
+    std::unordered_map<std::string, ConfigMap> env_overrides_;
+};
+
+// ============================================================
+//  Topology adapter
+// ============================================================
+
+class TopologyAdapter {
+public:
+    explicit TopologyAdapter(TopologyType type = TopologyType::FLAT)
+        : type_(type) {
+        UMRE_LOGF(LogLevel::INFO, "TopologyAdapter: type='{}' initialized",
+                  topology_type_str(type_));
+    }
+
+    void set_type(TopologyType t) noexcept {
+        UMRE_LOGF(LogLevel::INFO, "TopologyAdapter: topology changed to '{}'",
+                  topology_type_str(t));
+        type_ = t;
+    }
+
+    [[nodiscard]] TopologyType type() const noexcept { return type_; }
+
+    /// Returns edge weight modifier for topology-aware routing
+    [[nodiscard]] double edge_weight_modifier(NodeID from, NodeID to) const noexcept {
+        switch (type_) {
+        case TopologyType::FLAT:         return 1.0;
+        case TopologyType::HIERARCHICAL: return hierarchical_modifier(from, to);
+        case TopologyType::MESH:         return 0.9;  // prefer mesh routes
+        case TopologyType::RING:         return ring_modifier(from, to);
+        case TopologyType::STAR:         return star_modifier(from, to);
+        case TopologyType::HYBRID:       return hybrid_modifier(from, to);
+        case TopologyType::RESTRICTED:   return restricted_modifier(from, to);
+        default:                         return 1.0;
+        }
+    }
+
+    void set_hub_node(NodeID hub) noexcept { hub_node_ = hub; }
+    void add_restricted_pair(NodeID a, NodeID b) {
+        restricted_pairs_.emplace(a, b);
+    }
+    [[nodiscard]] bool is_restricted(NodeID a, NodeID b) const noexcept {
+        return restricted_pairs_.count({a, b}) > 0
+            || restricted_pairs_.count({b, a}) > 0;
+    }
+
+    void set_ring_size(size_t n) noexcept { ring_size_ = n; }
+
+    /// Re-wire graph according to topology rules
+    void apply_to_graph(DependencyGraph& graph,
+                        const std::vector<NodeID>& nodes) const {
+        UMRE_LOGF(LogLevel::INFO, "TopologyAdapter: applying '{}' topology to {} nodes",
+                  topology_type_str(type_), nodes.size());
+
+        switch (type_) {
+        case TopologyType::STAR:
+            apply_star(graph, nodes);
+            break;
+        case TopologyType::RING:
+            apply_ring(graph, nodes);
+            break;
+        case TopologyType::MESH:
+            apply_mesh(graph, nodes);
+            break;
+        default:
+            // For others, edges are controlled by dependency declarations
+            break;
+        }
+    }
+
+private:
+    TopologyType type_;
+    NodeID hub_node_{0};
+    size_t ring_size_{0};
+    std::set<std::pair<NodeID, NodeID>> restricted_pairs_;
+
+    double hierarchical_modifier(NodeID from, NodeID to) const noexcept {
+        // Parent → child is cheaper than child → parent
+        return (to > from) ? 0.8 : 1.3;
+    }
+
+    double ring_modifier(NodeID from, NodeID to) const noexcept {
+        if (ring_size_ == 0) return 1.0;
+        // Forward ring step is cheapest
+        NodeID expected_next = (from % ring_size_) + 1;
+        return (to == expected_next) ? 0.7 : 1.5;
+    }
+
+    double star_modifier(NodeID from, NodeID to) const noexcept {
+        bool from_hub = (from == hub_node_);
+        bool to_hub   = (to   == hub_node_);
+        if (from_hub || to_hub) return 0.6;
+        return 2.0; // spoke-to-spoke must go via hub
+    }
+
+    double hybrid_modifier(NodeID from, NodeID to) const noexcept {
+        return std::min(hierarchical_modifier(from, to), ring_modifier(from, to));
+    }
+
+    double restricted_modifier(NodeID from, NodeID to) const noexcept {
+        if (is_restricted(from, to))
+            return std::numeric_limits<double>::max();  // effectively blocked
+        return 1.0;
+    }
+
+    void apply_star(DependencyGraph& g, const std::vector<NodeID>& nodes) const {
+        if (hub_node_ == 0 && !nodes.empty()) {
+            UMRE_WARN("TopologyAdapter (STAR): no hub configured, skipping");
+            return;
+        }
+        for (auto n : nodes) {
+            if (n == hub_node_) continue;
+            try {
+                g.add_edge(hub_node_, n, 0.6);
+                g.add_edge(n, hub_node_, 0.6);
+            } catch (...) {}
+        }
+    }
+
+    void apply_ring(DependencyGraph& g, const std::vector<NodeID>& nodes) const {
+        if (nodes.size() < 2) return;
+        for (size_t i = 0; i < nodes.size(); ++i) {
+            NodeID from = nodes[i];
+            NodeID to   = nodes[(i + 1) % nodes.size()];
+            try {
+                g.add_edge(from, to, 0.7);
+            } catch (...) {}
+        }
+    }
+
+    void apply_mesh(DependencyGraph& g, const std::vector<NodeID>& nodes) const {
+        for (size_t i = 0; i < nodes.size(); ++i)
+            for (size_t j = i + 1; j < nodes.size(); ++j)
+                try {
+                    g.add_edge(nodes[i], nodes[j], 0.9);
+                    g.add_edge(nodes[j], nodes[i], 0.9);
+                } catch (...) {}
+    }
+};
+
+// ============================================================
+//  Pathway optimizer
+// ============================================================
+
+class PathwayOptimizer {
+public:
+    enum class Strategy {
+        SHORTEST_WEIGHT,    ///< Minimize total edge weight
+        LOWEST_LATENCY,     ///< Minimize total latency
+        MAX_BANDWIDTH,      ///< Maximize minimum bandwidth
+        BALANCED,           ///< Weighted combination
+        LOAD_AWARE          ///< Prefer nodes with lower compute cost
+    };
+
+    explicit PathwayOptimizer(Strategy strat = Strategy::BALANCED)
+        : strategy_(strat) {}
+
+    void set_strategy(Strategy s) noexcept { strategy_ = s; }
+    [[nodiscard]] Strategy strategy() const noexcept { return strategy_; }
+
+    /// Compute optimal pathway from src to dst using the configured strategy
+    [[nodiscard]] std::optional<OptimalPathway>
+    compute(const DependencyGraph& graph, NodeID src, NodeID dst) const {
+        UMRE_LOGF(LogLevel::DEBUG, "PathwayOptimizer: computing {} -> {}", src, dst);
+
+        switch (strategy_) {
+        case Strategy::SHORTEST_WEIGHT:
+        case Strategy::BALANCED:
+            return graph.shortest_path(src, dst);
+
+        case Strategy::LOWEST_LATENCY:
+            return compute_lowest_latency(graph, src, dst);
+
+        case Strategy::MAX_BANDWIDTH:
+            return compute_max_bandwidth(graph, src, dst);
+
+        case Strategy::LOAD_AWARE:
+            return compute_load_aware(graph, src, dst);
+        }
+        return std::nullopt;
+    }
+
+    /// Compute k-shortest paths (Yen's algorithm subset)
+    [[nodiscard]] std::vector<OptimalPathway>
+    k_shortest_paths(const DependencyGraph& graph, NodeID src, NodeID dst, size_t k) const {
+        UMRE_LOGF(LogLevel::DEBUG, "PathwayOptimizer: k-shortest ({}) {} -> {}", k, src, dst);
+
+        std::vector<OptimalPathway> results;
+        auto first = graph.shortest_path(src, dst);
+        if (!first) return results;
+        results.push_back(*first);
+
+        // Simplified: generate variations by increasing edge weights on used edges
+        // (full Yen's would require spur-path logic over the full graph copy)
+        for (size_t i = 1; i < k; ++i) {
+            // Heuristic: re-run shortest path from previous endpoint
+            if (results.back().nodes.size() < 2) break;
+            auto alt = graph.shortest_path(
+                results.back().nodes[1], dst);
+            if (!alt || alt->nodes.empty()) break;
+            alt->total_weight += results.back().edges.empty()
+                ? 0.0 : results.back().edges[0].weight;
+            results.push_back(*alt);
+        }
+
+        return results;
+    }
+
+    /// Compute Maximum Spanning Tree (Prim's) — useful for MESH topologies
+    [[nodiscard]] std::vector<PathwayEdge>
+    maximum_spanning_tree(const DependencyGraph& graph) const {
+        const auto all_dist = graph.all_pairs_shortest_paths();
+        // Prim's on inverted weights
+        std::unordered_set<NodeID> in_tree;
+        std::vector<PathwayEdge> mst;
+
+        auto all_nodes_vec = [&]() {
+            std::vector<NodeID> v;
+            for (auto& [n, _] : all_dist) v.push_back(n);
+            return v;
+        }();
+
+        if (all_nodes_vec.empty()) return mst;
+
+        in_tree.insert(all_nodes_vec[0]);
+        while (in_tree.size() < all_nodes_vec.size()) {
+            PathwayEdge best{0, 0, 0.0};
+            double best_w = std::numeric_limits<double>::infinity();
+
+            for (auto u : all_nodes_vec) {
+                if (!in_tree.count(u)) continue;
+                for (auto& e : graph.outgoing(u)) {
+                    if (!in_tree.count(e.to) && e.weight < best_w) {
+                        best_w = e.weight;
+                        best   = e;
+                    }
+                }
+            }
+
+            if (best.from == 0 && best.to == 0) break;
+            mst.push_back(best);
+            in_tree.insert(best.to);
+        }
+
+        return mst;
+    }
+
+private:
+    Strategy strategy_;
+
+    std::optional<OptimalPathway>
+    compute_lowest_latency(const DependencyGraph& graph, NodeID src, NodeID dst) const {
+        // Dijkstra on latency metric
+        std::unordered_map<NodeID, double> lat;
+        std::unordered_map<NodeID, NodeID> prev;
+        std::priority_queue<std::pair<double, NodeID>,
+                            std::vector<std::pair<double, NodeID>>,
+                            std::greater<>> pq;
+
+        for (auto& e : graph.outgoing(src))
+            lat[e.to] = std::numeric_limits<double>::infinity();
+        lat[src] = 0.0;
+        pq.emplace(0.0, src);
+
+        while (!pq.empty()) {
+            auto [d, u] = pq.top(); pq.pop();
+            if (d > lat[u]) continue;
+            for (auto& e : graph.outgoing(u)) {
+                double nl = lat[u] + e.latency;
+                if (nl < lat.try_emplace(e.to, std::numeric_limits<double>::infinity()).first->second) {
+                    lat[e.to] = nl;
+                    prev[e.to] = u;
+                    pq.emplace(nl, e.to);
+                }
+            }
+        }
+
+        auto it = lat.find(dst);
+        if (it == lat.end() || std::isinf(it->second)) return std::nullopt;
+
+        OptimalPathway path;
+        path.total_latency = it->second;
+        path.is_feasible   = true;
+        path.resolution_strategy = "lowest_latency";
+
+        NodeID cur = dst;
+        while (cur != src) {
+            path.nodes.push_back(cur);
+            cur = prev.at(cur);
+        }
+        path.nodes.push_back(src);
+        std::ranges::reverse(path.nodes);
+        return path;
+    }
+
+    std::optional<OptimalPathway>
+    compute_max_bandwidth(const DependencyGraph& graph, NodeID src, NodeID dst) const {
+        // Max-flow single-path approximation: maximize bottleneck bandwidth
+        std::unordered_map<NodeID, double> bw;
+        std::unordered_map<NodeID, NodeID> prev;
+        std::priority_queue<std::pair<double, NodeID>> pq; // max-heap
+
+        bw[src] = std::numeric_limits<double>::max();
+        pq.emplace(std::numeric_limits<double>::max(), src);
+
+        while (!pq.empty()) {
+            auto [b, u] = pq.top(); pq.pop();
+            if (b < bw.try_emplace(u, 0.0).first->second) continue;
+            for (auto& e : graph.outgoing(u)) {
+                double nb = std::min(b, e.bandwidth);
+                if (nb > bw.try_emplace(e.to, 0.0).first->second) {
+                    bw[e.to] = nb;
+                    prev[e.to] = u;
+                    pq.emplace(nb, e.to);
+                }
+            }
+        }
+
+        auto it = bw.find(dst);
+        if (it == bw.end() || it->second == 0.0) return std::nullopt;
+
+        OptimalPathway path;
+        path.min_bandwidth = it->second;
+        path.is_feasible   = true;
+        path.resolution_strategy = "max_bandwidth";
+
+        NodeID cur = dst;
+        while (cur != src) {
+            path.nodes.push_back(cur);
+            cur = prev.at(cur);
+        }
+        path.nodes.push_back(src);
+        std::ranges::reverse(path.nodes);
+        return path;
+    }
+
+    std::optional<OptimalPathway>
+    compute_load_aware(const DependencyGraph& graph, NodeID src, NodeID dst) const {
+        // Dijkstra weighted by edge.weight + node.compute_cost
+        std::unordered_map<NodeID, double> cost;
+        std::unordered_map<NodeID, NodeID> prev;
+        std::priority_queue<std::pair<double, NodeID>,
+                            std::vector<std::pair<double, NodeID>>,
+                            std::greater<>> pq;
+
+        cost[src] = 0.0;
+        pq.emplace(0.0, src);
+
+        while (!pq.empty()) {
+            auto [c, u] = pq.top(); pq.pop();
+            if (c > cost.try_emplace(u, std::numeric_limits<double>::infinity()).first->second)
+                continue;
+
+            for (auto& e : graph.outgoing(u)) {
+                double node_cost = graph.node(e.to).compute_cost;
+                double nc = c + e.weight + node_cost;
+                if (nc < cost.try_emplace(e.to, std::numeric_limits<double>::infinity()).first->second) {
+                    cost[e.to] = nc;
+                    prev[e.to] = u;
+                    pq.emplace(nc, e.to);
+                }
+            }
+        }
+
+        auto it = cost.find(dst);
+        if (it == cost.end() || std::isinf(it->second)) return std::nullopt;
+
+        OptimalPathway path;
+        path.total_weight = it->second;
+        path.is_feasible  = true;
+        path.resolution_strategy = "load_aware";
+
+        NodeID cur = dst;
+        while (cur != src) {
+            path.nodes.push_back(cur);
+            cur = prev.at(cur);
+        }
+        path.nodes.push_back(src);
+        std::ranges::reverse(path.nodes);
+        return path;
+    }
+};
+
+// ============================================================
+//  Module Registry
+// ============================================================
+
+class ModuleRegistry {
+public:
+    explicit ModuleRegistry(std::string name = "default")
+        : name_(std::move(name)) {
+        UMRE_LOGF(LogLevel::INFO, "ModuleRegistry '{}' created", name_);
+    }
+
+    ~ModuleRegistry() {
+        UMRE_LOGF(LogLevel::INFO, "ModuleRegistry '{}' shutting down ({} modules)",
+                  name_, modules_.size());
+    }
+
+    void register_descriptor(ModuleDescriptor desc) {
+        std::unique_lock lk{mtx_};
+        const ModuleID id = desc.id;
+        if (modules_.count(id))
+            throw LoadError(std::format("Module '{}' already registered", id));
+
+        // Register virtual provides
+        for (auto& prov : desc.provides)
+            virtual_map_[prov] = id;
+
+        auto mod = std::make_shared<Module>(std::move(desc));
+        modules_[id] = std::move(mod);
+
+        UMRE_LOGF(LogLevel::INFO, "ModuleRegistry: registered module '{}'", id);
+    }
+
+    [[nodiscard]] std::shared_ptr<Module> get(const ModuleID& id) const {
+        std::shared_lock lk{mtx_};
+        // Try direct lookup
+        if (auto it = modules_.find(id); it != modules_.end())
+            return it->second;
+        // Try virtual map
+        if (auto vit = virtual_map_.find(id); vit != virtual_map_.end()) {
+            if (auto it = modules_.find(vit->second); it != modules_.end())
+                return it->second;
+        }
+        return nullptr;
+    }
+
+    [[nodiscard]] std::shared_ptr<Module> require(const ModuleID& id) const {
+        auto mod = get(id);
+        if (!mod)
+            throw ModuleNotFoundError(std::format("require('{}'): module not found", id));
+        return mod;
+    }
+
+    [[nodiscard]] bool contains(const ModuleID& id) const noexcept {
+        std::shared_lock lk{mtx_};
+        return modules_.count(id) > 0 || virtual_map_.count(id) > 0;
+    }
+
+    [[nodiscard]] size_t size() const noexcept {
+        std::shared_lock lk{mtx_};
+        return modules_.size();
+    }
+
+    void unregister(const ModuleID& id) {
+        std::unique_lock lk{mtx_};
+        auto it = modules_.find(id);
+        if (it == modules_.end())
+            throw ModuleNotFoundError(std::format("unregister('{}'): not found", id));
+
+        for (auto& prov : it->second->descriptor().provides)
+            virtual_map_.erase(prov);
+
+        modules_.erase(it);
+        UMRE_LOGF(LogLevel::INFO, "ModuleRegistry: unregistered '{}'", id);
+    }
+
+    [[nodiscard]] std::vector<ModuleID> all_ids() const {
+        std::shared_lock lk{mtx_};
+        std::vector<ModuleID> ids;
+        ids.reserve(modules_.size());
+        for (auto& [id, _] : modules_) ids.push_back(id);
+        return ids;
+    }
+
+    [[nodiscard]] std::vector<std::shared_ptr<Module>>
+    modules_in_state(ModuleState s) const {
+        std::shared_lock lk{mtx_};
+        std::vector<std::shared_ptr<Module>> result;
+        for (auto& [_, m] : modules_)
+            if (m->state() == s) result.push_back(m);
+        return result;
+    }
+
+    void dump(std::ostream& os) const {
+        std::shared_lock lk{mtx_};
+        os << "=== ModuleRegistry '" << name_ << "' (" << modules_.size() << " modules) ===\n";
+        for (auto& [id, m] : modules_) {
+            os << "  [" << module_state_str(m->state()) << "] "
+               << id << " v" << m->version()
+               << " deps=" << m->descriptor().dependencies.size() << "\n";
+        }
+    }
+
+private:
+    mutable std::shared_mutex mtx_;
+    std::string name_;
+    std::unordered_map<ModuleID, std::shared_ptr<Module>> modules_;
+    std::unordered_map<ModuleID, ModuleID> virtual_map_; ///< virtual ID → real ID
+};
+
+// ============================================================
+//  Resolution context (per-resolution-session)
+// ============================================================
+
+struct ResolutionContext {
+    uint64_t    session_id{0};
+    std::string environment;
+    TopologyType topology{TopologyType::FLAT};
+    PathwayOptimizer::Strategy optimizer_strategy{PathwayOptimizer::Strategy::BALANCED};
+    bool        parallel{true};
+    bool        allow_partial{false};
+    size_t      max_depth{64};
+    std::chrono::milliseconds timeout{5000};
+
+    std::vector<ModuleID> force_reload;
+    std::vector<ModuleID> exclusions;
+};
+
+struct ResolutionReport {
+    uint64_t session_id{0};
+    bool     success{false};
+    std::vector<ModuleID> resolved_order;
+    std::vector<ModuleID> failed;
+    std::vector<std::string> errors;
+    std::unordered_map<ModuleID, OptimalPathway> pathways;
+    std::chrono::milliseconds duration{0};
+    size_t total_modules{0};
+    size_t loaded_modules{0};
+
+    void log_summary() const {
+        UMRE_LOGF(LogLevel::INFO,
+            "Resolution #{}: {}/{} modules OK in {}ms ({})",
+            session_id, loaded_modules, total_modules,
+            duration.count(), success ? "SUCCESS" : "PARTIAL/FAILED");
+        for (auto& e : errors)
+            UMRE_LOGF(LogLevel::WARN, "  Resolution error: {}", e);
+    }
+};
+
+// ============================================================
+//  Resolution engine
+// ============================================================
+
+class ResolutionEngine {
+public:
+    explicit ResolutionEngine(
+        std::shared_ptr<ModuleRegistry>    registry,
+        std::shared_ptr<ConfigurationMapper> cfg_mapper,
+        std::shared_ptr<TopologyAdapter>   topology,
+        std::shared_ptr<IModuleLoader>     loader = nullptr)
+        : registry_(std::move(registry))
+        , cfg_mapper_(std::move(cfg_mapper))
+        , topology_(std::move(topology))
+        , loader_(loader ? std::move(loader) : std::make_shared<NullModuleLoader>())
+        , next_session_id_(1)
+    {
+        UMRE_INFO("ResolutionEngine initialized");
+    }
+
+    /// Full resolution pass: build graph, topological sort, load + configure
+    [[nodiscard]] ResolutionReport resolve(const ResolutionContext& ctx) {
+        auto session_id = next_session_id_.fetch_add(1, std::memory_order_relaxed);
+        auto t_start    = std::chrono::steady_clock::now();
+
+        ResolutionReport report;
+        report.session_id    = session_id;
+        report.total_modules = registry_->size();
+
+        UMRE_LOGF(LogLevel::INFO,
+            "Resolution session #{}: env='{}' topo='{}' modules={}",
+            session_id, ctx.environment,
+            topology_type_str(ctx.topology), registry_->size());
+
+        try {
+            // 1. Build dependency graph
+            auto graph = build_graph(ctx);
+
+            // 2. Topological sort → load order
+            std::vector<NodeID> topo_order;
+            try {
+                topo_order = graph.topological_sort();
+            } catch (CircularDependencyError& e) {
+                auto cycles = graph.find_cycles();
+                report.errors.push_back(std::format(
+                    "Circular dependency: {} cycle(s) found. {}",
+                    cycles.size(), e.what()));
+                UMRE_ERROR(report.errors.back());
+                if (!ctx.allow_partial) {
+                    report.success = false;
+                    goto finish;
+                }
+            }
+
+            // 3. Resolve modules in order
+            if (ctx.parallel) {
+                resolve_parallel(topo_order, ctx, report, graph);
+            } else {
+                resolve_sequential(topo_order, ctx, report, graph);
+            }
+
+        } catch (const UMREException& e) {
+            report.errors.push_back(e.what());
+            UMRE_ERROR(e.what());
+        } catch (const std::exception& e) {
+            report.errors.push_back(std::string("std::exception: ") + e.what());
+            UMRE_ERROR(report.errors.back());
+        }
+
+        finish:
+        auto t_end = std::chrono::steady_clock::now();
+        report.duration = std::chrono::duration_cast<std::chrono::milliseconds>(t_end - t_start);
+        report.success  = report.failed.empty();
+        report.log_summary();
+        return report;
+    }
+
+    /// Resolve a single module by require-style ID
+    [[nodiscard]] std::shared_ptr<Module>
+    require_module(const ModuleID& id, const ResolutionContext& ctx) {
+        UMRE_LOGF(LogLevel::DEBUG, "require_module('{}')", id);
+
+        auto mod = registry_->require(id);
+
+        if (mod->is_ready() && !is_in_force_reload(id, ctx)) {
+            UMRE_LOGF(LogLevel::DEBUG, "require_module: '{}' already ready", id);
+            mod->increment_resolve_calls();
+            return mod;
+        }
+
+        // Resolve dependencies first
+        for (auto& dep_id : mod->descriptor().dependencies) {
+            if (!is_excluded(dep_id, ctx))
+                require_module(dep_id, ctx);
+        }
+
+        load_module(*mod, ctx);
+        return mod;
+    }
+
+    /// Compute all optimal pathways between module pairs
+    [[nodiscard]] std::unordered_map<std::string, OptimalPathway>
+    compute_all_pathways(const ResolutionContext& ctx) {
+        UMRE_INFO("Computing all inter-module pathways...");
+
+        auto graph = build_graph(ctx);
+        PathwayOptimizer optimizer(ctx.optimizer_strategy);
+        std::unordered_map<std::string, OptimalPathway> result;
+
+        auto ids = registry_->all_ids();
+        for (size_t i = 0; i < ids.size(); ++i) {
+            for (size_t j = i + 1; j < ids.size(); ++j) {
+                NodeID nid_i = module_to_node(ids[i]);
+                NodeID nid_j = module_to_node(ids[j]);
+                if (nid_i == 0 || nid_j == 0) continue;
+                auto path = optimizer.compute(graph, nid_i, nid_j);
+                if (path) {
+                    std::string key = ids[i] + "->" + ids[j];
+                    result[key] = *path;
+                    UMRE_LOGF(LogLevel::TRACE, "Pathway {}: {}", key, path->to_string());
+                }
+            }
+        }
+
+        UMRE_LOGF(LogLevel::INFO, "Computed {} pathways", result.size());
+        return result;
+    }
+
+private:
+    std::shared_ptr<ModuleRegistry>    registry_;
+    std::shared_ptr<ConfigurationMapper> cfg_mapper_;
+    std::shared_ptr<TopologyAdapter>   topology_;
+    std::shared_ptr<IModuleLoader>     loader_;
+    std::atomic<uint64_t>              next_session_id_;
+
+    // Node ID assignment
+    mutable std::shared_mutex node_map_mtx_;
+    std::unordered_map<ModuleID, NodeID> module_to_node_map_;
+    std::atomic<NodeID> next_node_id_{1};
+
+    [[nodiscard]] NodeID get_or_create_node(const ModuleID& id) {
+        {
+            std::shared_lock lk{node_map_mtx_};
+            if (auto it = module_to_node_map_.find(id); it != module_to_node_map_.end())
+                return it->second;
+        }
+        std::unique_lock lk{node_map_mtx_};
+        NodeID nid = next_node_id_.fetch_add(1, std::memory_order_relaxed);
+        module_to_node_map_[id] = nid;
+        return nid;
+    }
+
+    [[nodiscard]] NodeID module_to_node(const ModuleID& id) const {
+        std::shared_lock lk{node_map_mtx_};
+        auto it = module_to_node_map_.find(id);
+        return (it != module_to_node_map_.end()) ? it->second : 0;
+    }
+
+    [[nodiscard]] DependencyGraph build_graph(const ResolutionContext& ctx) {
+        DependencyGraph graph;
+        auto all_ids = registry_->all_ids();
+
+        // Add nodes
+        for (auto& id : all_ids) {
+            if (is_excluded(id, ctx)) continue;
+            NodeID nid = get_or_create_node(id);
+            graph.add_node(nid, id);
+        }
+
+        // Add edges from descriptor dependencies
+        for (auto& id : all_ids) {
+            if (is_excluded(id, ctx)) continue;
+            auto mod = registry_->get(id);
+            if (!mod) continue;
+
+            NodeID from = get_or_create_node(id);
+            for (auto& dep_id : mod->descriptor().dependencies) {
+                if (is_excluded(dep_id, ctx)) continue;
+                if (!registry_->contains(dep_id)) {
+                    UMRE_LOGF(LogLevel::WARN,
+                        "build_graph: dependency '{}' of '{}' not registered",
+                        dep_id, id);
+                    continue;
+                }
+                NodeID to = get_or_create_node(dep_id);
+                // Weight includes topology modifier
+                double w = 1.0 * topology_->edge_weight_modifier(from, to);
+                try {
+                    graph.add_edge(from, to, w);
+                } catch (const TopologyError& e) {
+                    UMRE_LOGF(LogLevel::WARN, "build_graph edge error: {}", e.what());
+                }
+            }
+
+            // Soft dependency edges with higher weight
+            for (auto& dep_id : mod->descriptor().soft_dependencies) {
+                if (is_excluded(dep_id, ctx) || !registry_->contains(dep_id)) continue;
+                NodeID to = get_or_create_node(dep_id);
+                double w  = 2.0 * topology_->edge_weight_modifier(from, to);
+                try {
+                    graph.add_edge(from, to, w);
+                } catch (...) {}
+            }
+        }
+
+        // Apply topology-level structural edges
+        std::vector<NodeID> node_ids;
+        node_ids.reserve(all_ids.size());
+        for (auto& id : all_ids)
+            if (!is_excluded(id, ctx))
+                node_ids.push_back(get_or_create_node(id));
+
+        topology_->apply_to_graph(graph, node_ids);
+
+        UMRE_LOGF(LogLevel::DEBUG,
+            "build_graph: {} nodes, {} edges",
+            graph.node_count(), graph.edge_count());
+        return graph;
+    }
+
+    void load_module(Module& mod, const ResolutionContext& ctx) {
+        if (mod.state() == ModuleState::ACTIVE
+            || mod.state() == ModuleState::RESOLVED) {
+            if (!is_in_force_reload(mod.id(), ctx)) {
+                mod.increment_resolve_calls();
+                return;
+            }
+        }
+
+        mod.set_state(ModuleState::LOADING);
+
+        try {
+            // Resolve config
+            ConfigMap cfg = cfg_mapper_->resolve(mod.descriptor());
+            mod.apply_config(cfg);
+
+            // Delegate to loader
+            if (loader_->can_load(mod.descriptor())) {
+                auto handle = loader_->load(mod.descriptor(), cfg);
+                mod.set_handle(std::move(handle));
+                mod.mark_loaded();
+            }
+
+            mod.set_state(ModuleState::LOADED);
+            mod.set_state(ModuleState::RESOLVING);
+
+            // Mark resolved
+            mod.mark_resolved();
+            mod.set_state(ModuleState::RESOLVED);
+            mod.set_state(ModuleState::ACTIVE);
+            mod.increment_resolve_calls();
+
+            UMRE_LOGF(LogLevel::INFO, "Module '{}' activated", mod.id());
+
+        } catch (const std::exception& e) {
+            mod.record_error(e.what());
+            UMRE_LOGF(LogLevel::ERROR, "Module '{}' load failed: {}", mod.id(), e.what());
+            throw;
+        }
+    }
+
+    void resolve_sequential(const std::vector<NodeID>& order,
+                            const ResolutionContext& ctx,
+                            ResolutionReport& report,
+                            const DependencyGraph& graph) {
+        PathwayOptimizer optimizer(ctx.optimizer_strategy);
+        for (auto nid : order) {
+            if (!graph.has_node(nid)) continue;
+            auto& pnode = graph.node(nid);
+            auto mod    = registry_->get(pnode.module_id);
+            if (!mod) {
+                report.failed.push_back(pnode.module_id);
+                continue;
+            }
+            try {
+                load_module(*mod, ctx);
+                report.resolved_order.push_back(mod->id());
+                report.loaded_modules++;
+            } catch (...) {
+                report.failed.push_back(mod->id());
+                if (!ctx.allow_partial) throw;
+            }
+        }
+    }
+
+    void resolve_parallel(const std::vector<NodeID>& order,
+                          const ResolutionContext& ctx,
+                          ResolutionReport& report,
+                          const DependencyGraph& graph) {
+        // Group into dependency levels (modules with no unresolved deps)
+        // level[0] → no deps, level[1] → deps only from level[0], ...
+        std::unordered_map<NodeID, size_t> level;
+        for (auto nid : order) {
+            size_t max_dep_level = 0;
+            for (auto& e : graph.incoming(nid)) {
+                if (auto it = level.find(e.from); it != level.end())
+                    max_dep_level = std::max(max_dep_level, it->second + 1);
+            }
+            level[nid] = max_dep_level;
+        }
+
+        // Group nodes by level
+        std::map<size_t, std::vector<NodeID>> levels;
+        for (auto& [nid, lv] : level) levels[lv].push_back(nid);
+
+        for (auto& [lv, nodes] : levels) {
+            UMRE_LOGF(LogLevel::DEBUG, "Parallel resolve level {}: {} modules", lv, nodes.size());
+
+            std::mutex report_mtx;
+            std::vector<std::future<void>> futures;
+
+            for (auto nid : nodes) {
+                futures.push_back(std::async(std::launch::async, [&, nid]() {
+                    if (!graph.has_node(nid)) return;
+                    auto& pnode = graph.node(nid);
+                    auto  mod   = registry_->get(pnode.module_id);
+                    if (!mod) {
+                        std::lock_guard lk{report_mtx};
+                        report.failed.push_back(pnode.module_id);
+                        return;
+                    }
+                    try {
+                        load_module(*mod, ctx);
+                        std::lock_guard lk{report_mtx};
+                        report.resolved_order.push_back(mod->id());
+                        report.loaded_modules++;
+                    } catch (const std::exception& e) {
+                        std::lock_guard lk{report_mtx};
+                        report.failed.push_back(mod->id());
+                        report.errors.push_back(
+                            std::format("Parallel load '{}': {}", mod->id(), e.what()));
+                    }
+                }));
+            }
+
+            // Wait for level to complete before next level
+            for (auto& f : futures) {
+                try { f.get(); }
+                catch (...) { if (!ctx.allow_partial) throw; }
+            }
+        }
+    }
+
+    [[nodiscard]] bool is_excluded(const ModuleID& id, const ResolutionContext& ctx) const {
+        return std::ranges::find(ctx.exclusions, id) != ctx.exclusions.end();
+    }
+
+    [[nodiscard]] bool is_in_force_reload(const ModuleID& id, const ResolutionContext& ctx) const {
+        return std::ranges::find(ctx.force_reload, id) != ctx.force_reload.end();
+    }
+};
+
+// ============================================================
+//  Universal Module Resolver Engine (facade)
+// ============================================================
+
+class UniversalModuleResolverEngine {
+public:
+    struct Config {
+        std::string registry_name   {"default"};
+        std::string environment     {"production"};
+        TopologyType topology       {TopologyType::FLAT};
+        PathwayOptimizer::Strategy optimizer{PathwayOptimizer::Strategy::BALANCED};
+        LogLevel log_level          {LogLevel::INFO};
+        bool parallel_resolution    {true};
+        bool allow_partial_resolution{false};
+        std::chrono::milliseconds resolution_timeout{10000};
+    };
+
+    explicit UniversalModuleResolverEngine(Config cfg = {})
+        : cfg_(std::move(cfg)) {
+        Logger::instance().set_level(cfg_.log_level);
+
+        UMRE_LOGF(LogLevel::INFO,
+            "UMRE v{} starting: env='{}' topo='{}'",
+            UMRE_VERSION.to_string(), cfg_.environment,
+            topology_type_str(cfg_.topology));
+
+        registry_   = std::make_shared<ModuleRegistry>(cfg_.registry_name);
+        cfg_mapper_ = std::make_shared<ConfigurationMapper>(cfg_.environment);
+        topology_   = std::make_shared<TopologyAdapter>(cfg_.topology);
+        loader_     = std::make_shared<NullModuleLoader>();
+        engine_     = std::make_shared<ResolutionEngine>(
+                          registry_, cfg_mapper_, topology_, loader_);
+
+        UMRE_INFO("UMRE ready");
+    }
+
+    // ---- Module registration ----
+
+    void register_module(ModuleDescriptor desc) {
+        UMRE_LOGF(LogLevel::INFO, "UMRE: register '{}'", desc.id);
+        registry_->register_descriptor(std::move(desc));
+    }
+
+    template<typename... Descriptors>
+    void register_modules(Descriptors&&... descs) {
+        (register_module(std::forward<Descriptors>(descs)), ...);
+    }
+
+    // ---- Require-style loading (CommonJS-inspired) ----
+
+    [[nodiscard]] std::shared_ptr<Module> require(const ModuleID& id) {
+        ResolutionContext ctx = default_context();
+        return engine_->require_module(id, ctx);
+    }
+
+    [[nodiscard]] std::shared_ptr<Module> require(const ModuleID& id,
+                                                   const ResolutionContext& ctx) {
+        return engine_->require_module(id, ctx);
+    }
+
+    // ---- Full resolution ----
+
+    [[nodiscard]] ResolutionReport resolve_all() {
+        return engine_->resolve(default_context());
+    }
+
+    [[nodiscard]] ResolutionReport resolve(const ResolutionContext& ctx) {
+        return engine_->resolve(ctx);
+    }
+
+    // ---- Pathway computation ----
+
+    [[nodiscard]] std::optional<OptimalPathway>
+    compute_pathway(const ModuleID& from, const ModuleID& to) {
+        auto ctx = default_context();
+        auto all = engine_->compute_all_pathways(ctx);
+        std::string key = from + "->" + to;
+        auto it = all.find(key);
+        if (it != all.end()) return it->second;
+        return std::nullopt;
+    }
+
+    [[nodiscard]] std::unordered_map<std::string, OptimalPathway>
+    compute_all_pathways() {
+        return engine_->compute_all_pathways(default_context());
+    }
+
+    // ---- Configuration ----
+
+    void set_global_config(const ConfigKey& k, ConfigValue v) {
+        cfg_mapper_->register_global(k, std::move(v));
+    }
+
+    void set_module_config(const ModuleID& mod, ConfigMap cfg) {
+        cfg_mapper_->register_module_config(mod, std::move(cfg));
+    }
+
+    void set_env_override(const std::string& env, const ConfigKey& k, ConfigValue v) {
+        cfg_mapper_->register_env_override(env, k, std::move(v));
+    }
+
+    void switch_environment(const std::string& env) {
+        UMRE_LOGF(LogLevel::INFO, "UMRE: switching environment to '{}'", env);
+        cfg_.environment = env;
+        cfg_mapper_->set_environment(env);
+    }
+
+    // ---- Topology ----
+
+    void set_topology(TopologyType t) noexcept {
+        cfg_.topology = t;
+        topology_->set_type(t);
+    }
+
+    void set_topology_hub(NodeID hub) noexcept { topology_->set_hub_node(hub); }
+
+    void add_topology_restriction(NodeID a, NodeID b) {
+        topology_->add_restricted_pair(a, b);
+    }
+
+    // ---- Loader ----
+
+    void set_loader(std::shared_ptr<IModuleLoader> loader) {
+        UMRE_LOGF(LogLevel::INFO, "UMRE: loader set to '{}'", loader->name());
+        loader_ = std::move(loader);
+        engine_ = std::make_shared<ResolutionEngine>(
+                      registry_, cfg_mapper_, topology_, loader_);
+    }
+
+    // ---- Introspection ----
+
+    [[nodiscard]] const ModuleRegistry& registry() const noexcept { return *registry_; }
+    [[nodiscard]] const ConfigurationMapper& config_mapper() const noexcept { return *cfg_mapper_; }
+    [[nodiscard]] TopologyType topology_type() const noexcept { return topology_->type(); }
+
+    [[nodiscard]] std::optional<std::shared_ptr<Module>> find(const ModuleID& id) const {
+        auto m = registry_->get(id);
+        if (m) return m;
+        return std::nullopt;
+    }
+
+    [[nodiscard]] std::vector<std::shared_ptr<Module>>
+    active_modules() const {
+        return registry_->modules_in_state(ModuleState::ACTIVE);
+    }
+
+    void dump(std::ostream& os = std::cout) const {
+        os << "=== UMRE v" << UMRE_VERSION.to_string() << " ===\n";
+        os << "Environment: " << cfg_.environment << "\n";
+        os << "Topology:    " << topology_type_str(cfg_.topology) << "\n";
+        registry_->dump(os);
+        cfg_mapper_->dump(os);
+    }
+
+    // ---- Async resolution ----
+
+    [[nodiscard]] std::future<ResolutionReport> resolve_async() {
+        return std::async(std::launch::async, [this]() {
+            return resolve_all();
+        });
+    }
+
+    [[nodiscard]] std::future<ResolutionReport>
+    resolve_async(ResolutionContext ctx) {
+        return std::async(std::launch::async, [this, ctx = std::move(ctx)]() mutable {
+            return engine_->resolve(ctx);
+        });
+    }
+
+private:
+    Config cfg_;
+    std::shared_ptr<ModuleRegistry>      registry_;
+    std::shared_ptr<ConfigurationMapper> cfg_mapper_;
+    std::shared_ptr<TopologyAdapter>     topology_;
+    std::shared_ptr<IModuleLoader>       loader_;
+    std::shared_ptr<ResolutionEngine>    engine_;
+
+    [[nodiscard]] ResolutionContext default_context() const {
+        ResolutionContext ctx;
+        ctx.environment     = cfg_.environment;
+        ctx.topology        = cfg_.topology;
+        ctx.optimizer_strategy = cfg_.optimizer;
+        ctx.parallel        = cfg_.parallel_resolution;
+        ctx.allow_partial   = cfg_.allow_partial_resolution;
+        ctx.timeout         = cfg_.resolution_timeout;
+        return ctx;
+    }
+};
+
+} // namespace umre
